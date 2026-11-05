@@ -1,0 +1,48 @@
+flowchart TD
+  subgraph lan0["流程协调员（赛务）"]
+    direction TB
+    n1["排班表 v1（Excel）"]
+    n2["变更 → v2 / v3（群公告）<br/><i>断点 B1</i>"]
+    n3["T-1 封版 v3、分站打印<br/><i>断点 B1</i>"]
+    n10["赛后台账回填（≤48h）<br/><i>断点 B4 B5</i>"]
+    n11["台账封版"]
+  end
+  subgraph lan1["志愿者（一线）"]
+    direction TB
+    n4["到场、纸质签到"]
+    n5["接班：口头领岗"]
+    n6(["异常：迟到 / 缺席 / 换人<br/><i>断点 B3</i>"])
+  end
+  subgraph lan2["现场协调员（站点）"]
+    direction TB
+    n7["交接点名、翻群记录<br/><i>断点 B2</i>"]
+    n8["发现名单不符（3 个岗位）<br/><i>断点 B2</i>"]
+    n9["现场回溯、临时补位<br/><i>断点 B3</i>"]
+  end
+  subgraph lan3["数字化（系统）"]
+    direction TB
+    n12["扫码签到（小程序）<br/><i>断点 B4</i>"]
+    n13["赛后导出 CSV"]
+  end
+  subgraph lan4["下游（审核 / 客户）"]
+    direction TB
+    n14["对客户报数（口径现问）<br/><i>断点 B6</i>"]
+    n15["审核抽查：找不到确认人<br/><i>断点 B2</i>"]
+  end
+  n1 --> n2
+  n2 --> n3
+  n3 -.-> n4
+  n4 --> n5
+  n5 -.-> n7
+  n5 --> n6
+  n6 -.-> n8
+  n7 --> n8
+  n8 --> n9
+  n12 -.-> n4
+  n9 -.-> n10
+  n13 -.-> n10
+  n10 --> n11
+  n11 --> n14
+  n14 -.-> n15
+  classDef nosys fill:#FFF6EC,stroke:#A6553A,stroke-dasharray:6 4;
+  class n6 nosys;
