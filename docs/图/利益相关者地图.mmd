@@ -1,0 +1,33 @@
+flowchart TD
+  subgraph chain["决策链：从发起到对外报数"]
+    direction LR
+    c0["① 发起<br/><b>顾明岚</b><br/>定范围与试点"]
+    c1["② 出资<br/><b>顾明岚</b><br/>改善预算内列支"]
+    c2["③ 设计<br/><b>秦芮 + 唐映秋</b><br/>数据可读·流程可走"]
+    c3["④ 审批<br/><b>傅景</b><br/>红线与留存"]
+    c4["⑤ 使用<br/><b>林亦舟 + 唐映秋</b><br/>现场用不用"]
+    c5["⑥ 对外<br/><b>叶书</b><br/>报数口径"]
+    c0 --> c1
+    c1 --> c2
+    c2 --> c3
+    c3 --> c4
+    c4 --> c5
+  end
+  subgraph qHH["重点管理｜高决定权 · 高受影响"]
+    R1(["顾明岚<br/><small>业务负责人</small><br/>能定：立不立项、试点范围、投入口径"])
+    R2(["傅景<br/><small>审核与质量负责人</small><br/>能定：红线、留存期限、抽什么"])
+    R3(["叶书<br/><small>客户协同代表</small><br/>能定：对外怎么表述成果、怎么算数"])
+  end
+  subgraph qLH["保持知情｜低决定权 · 高受影响"]
+    R5(["唐映秋<br/><small>项目流程协调员</small><br/>能定：台账口径、责任转移点<br/><i>软否决（用脚投票）</i>"])
+    R6(["林亦舟<br/><small>赛事现场协调员</small><br/>能定：现场怎么用、用不用<br/><i>软否决（用脚投票）</i>"])
+  end
+  subgraph qHL["保持满意｜高决定权 · 低受影响"]
+    R4(["秦芮<br/><small>数字化工程师</small><br/>能定：读写什么数据、字段口径"])
+  end
+  subgraph qLL["观察｜低决定权 · 低受影响"]
+  end
+  classDef formal fill:#FFFFFF,stroke:#5C7A5C,stroke-width:2px;
+  classDef informal fill:#FFF6EC,stroke:#A6553A,stroke-width:2px,stroke-dasharray:6 4;
+  class R1,R2,R3,R4 formal;
+  class R5,R6 informal;

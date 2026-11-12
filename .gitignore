@@ -2,3 +2,7 @@ __pycache__/
 *.pyc
 .DS_Store
 Thumbs.db
+
+# 本地工作目录（智能体记忆、临时草稿），不进仓库
+.workbuddy/
+.tmpcheck/
