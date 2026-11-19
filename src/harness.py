@@ -166,6 +166,18 @@ def ledger_index() -> tuple[set[str], set[str], dict[str, dict]]:
     return ids, docs, by_id
 
 
+def row_diff(x: str, y: str) -> tuple[str, str, str]:
+    """两行 CSV 差在哪个字段。只报"整行不一致"等于让读者自己去数逗号。"""
+    fx, fy = next(csv.reader([x])), next(csv.reader([y]))
+    for i, (a, b) in enumerate(zip(fx, fy)):
+        if a != b:
+            col = ledger.COLUMNS[i] if i < len(ledger.COLUMNS) else f"第 {i+1} 列"
+            return col, a[:40] or "（空）", b[:40] or "（空）"
+    if len(fx) != len(fy):
+        return "列数", f"{len(fx)} 列", f"{len(fy)} 列"
+    return "整行", x[:40], y[:40]
+
+
 def csv_bytes(rows: list[dict]) -> bytes:
     """复现 build_ledger.write_csv 的字节结果，用来做同步比对。"""
     buf = io.StringIO(newline="")
@@ -210,13 +222,27 @@ def l1_csv_sync() -> list[str]:
         return ["docs/调研记录.csv 不存在，跑 python src/build_ledger.py 生成"]
     actual = LEDGER_CSV.read_bytes()
     expected = csv_bytes(rows)
-    if actual != expected:
-        # 给出更有用的定位：行数差多少
-        a = actual.decode("utf-8-sig").splitlines()
-        e = expected.decode("utf-8-sig").splitlines()
-        return [f"CSV 与 JSON 不一致（CSV {len(a)} 行 / 应为 {len(e)} 行），"
+    if actual == expected:
+        return []
+
+    # 字节不等不代表过期：CSV 是文本文件，git 检出时会按平台转换行尾
+    # （core.autocrlf 在 Windows 给 CRLF、Linux 给 LF）。所以要比内容，不比字节，
+    # 否则本地绿、CI 红——而"重新生成"也修不好，因为内容本来就一致。
+    a = actual.decode("utf-8-sig").replace("\r\n", "\n")
+    e = expected.decode("utf-8-sig").replace("\r\n", "\n")
+    if a == e:
+        return []
+
+    la, le = a.split("\n"), e.split("\n")
+    for i, (x, y) in enumerate(zip(la, le), 1):
+        if x != y:
+            col, got, want = row_diff(x, y)
+            return [f"CSV 第 {i} 行「{col}」不一致：文件是「{got}」，应为「{want}」"
+                    f"——跑 python src/build_ledger.py 重新生成"]
+    if len(la) != len(le):
+        return [f"CSV 行数与台账不一致（CSV {len(la)} 行 / 应为 {len(le)} 行），"
                 f"跑 python src/build_ledger.py 重新生成"]
-    return []
+    return ["CSV 与台账不一致，跑 python src/build_ledger.py 重新生成"]
 
 
 # ---------------------------------------------------------------- L2 证据可追溯

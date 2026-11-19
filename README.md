@@ -168,6 +168,9 @@ git config core.hooksPath .githooks
 
 CI 不装 Pillow：harness 只做文本复算与存在性判断，PNG 的同步由生成器一次写三份保证。
 
+CSV 的同步比对按**内容**做，不比字节：CSV 是文本文件，git 检出时会按平台转换行尾（Windows 给 CRLF、Linux 给 LF）。比字节会让本地绿、CI 红，而且报出来的
+「重新生成」根本修不好——内容本来就是一致的。这个坑 CI 第一次跑就踩到了。
+
 ---
 
 ## 五、方法与纪律
