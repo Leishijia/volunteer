@@ -427,6 +427,7 @@ def main(argv: list[str]) -> int:
     print(f"校验通过：{len(ROLES)} 个角色（正式否决 {formal} / 软否决 {len(ROLES)-formal}）、"
           f"{len(CHAIN)} 段决策链、{len(QUADRANTS)} 个象限；证据编号全部命中台账")
     if args.check:
+        print("（单点自检：只管本图定义，交付判定请跑 python src/harness.py）")
         return 0
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)

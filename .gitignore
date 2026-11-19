@@ -3,6 +3,9 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
+# 生成物：harness 的输出，本地看就好，不必入库（每次跑都会变）
+docs/校验报告.md
+
 # 本地工作目录（智能体记忆、临时草稿），不进仓库
 .workbuddy/
 .tmpcheck/

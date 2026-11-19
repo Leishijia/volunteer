@@ -322,6 +322,7 @@ def main(argv: list[str]) -> int:
         return 1
     print(f"定义校验通过：{len(NODES)} 个节点、{len(EDGES)} 条连线、{len(LANES)} 条泳道")
     if args.check:
+        print("（单点自检：只管本图定义，交付判定请跑 python src/harness.py）")
         return 0
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)

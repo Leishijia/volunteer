@@ -303,6 +303,28 @@ def l3_stake_sync() -> list[str]:
     return []
 
 
+@register("L3-5", "L3", "流程图 Mermaid 是当前定义的产物",
+          "三份生成物只校两份，漏掉的那份就会悄悄停在旧版本", "blocker")
+def l3_flow_mmd_sync() -> list[str]:
+    p = FIG / "现状流程图.mmd"
+    if not p.exists():
+        return ["docs/图/现状流程图.mmd 不存在，跑 python src/render_flow.py"]
+    if read_norm(p) != flow.to_mmd().replace("\r\n", "\n"):
+        return ["流程图 Mermaid 与当前定义不一致，跑 python src/render_flow.py 重新生成"]
+    return []
+
+
+@register("L3-6", "L3", "地图 Mermaid 是当前定义的产物",
+          "同上：漏校一份生成物，等于给「图是新的」留了一个反例", "blocker")
+def l3_stake_mmd_sync() -> list[str]:
+    p = FIG / "利益相关者地图.mmd"
+    if not p.exists():
+        return ["docs/图/利益相关者地图.mmd 不存在，跑 python src/render_stakeholders.py"]
+    if read_norm(p) != stake.to_mmd().replace("\r\n", "\n"):
+        return ["地图 Mermaid 与当前定义不一致，跑 python src/render_stakeholders.py 重新生成"]
+    return []
+
+
 # ---------------------------------------------------------------- L4 文档层
 
 EXPECTED = [
@@ -378,6 +400,19 @@ def l4_numbers() -> list[str]:
                 if n != total and str(total) not in line and not skip_token(line, str(n)):
                     issues.append(f"{rel(f)}:{no} 写作“{n} 条”，"
                                   f"台账实为 {total} 条")
+    return issues
+
+
+@register("L4-5", "L4", "交付清单本身没过期",
+          "EXPECTED 是手写清单：新增文件忘了登记，L4-1 就保护不到它——检查清单自己也会烂",
+          "warn")
+def l4_expected_sync() -> list[str]:
+    listed = {(ROOT / p).resolve() for p in EXPECTED}
+    on_disk = {p.resolve() for p in DOCS.rglob("*")
+               if p.is_file() and p.name not in SKIP_DOCS
+               and "__pycache__" not in p.parts}
+    issues = [f"{rel(p)} 存在但未登记进 EXPECTED（新增交付物请补进去）"
+              for p in sorted(on_disk - listed)]
     return issues
 
 

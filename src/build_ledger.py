@@ -142,6 +142,9 @@ def main(argv: list[str]) -> int:
     if not args.check:
         write_csv(rows)
         print(f"\n已生成：{OUT}")
+    else:
+        print("\n（单点自检：只管台账自身，不查文档引用与生成物是否过期；"
+              "交付判定请跑 python src/harness.py）")
     return 0
 
 
