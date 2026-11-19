@@ -61,6 +61,8 @@
 volunteer/
 ├── README.md                  # 本文件：结论、索引、怎么跑
 ├── LICENSE                    # MIT
+├── .github/workflows/verify.yml  # CI：push / PR 自动跑 harness
+├── .githooks/pre-commit       # 提交前拦一道（克隆后需 git config core.hooksPath .githooks）
 ├── docs/
 │   ├── 业务挖掘.md             # ① 阶段 1 主交付（任务 1/3 的业务机会清单在 §4.3）
 │   ├── 调研记录.md             # ② 访谈正文（可读版，36 条）
@@ -146,6 +148,26 @@ python src/render_stakeholders.py --check # 只校验坐标、否决类型与证
 
 `<!-- harness:ignore -->` 跳过整行，`<!-- harness:ignore B7 DOC-05 -->` 只放过指定 token。误报说明检查的判据还不够细，而不是说明检查不该存在——先把豁免写清楚，再回头改判据。
 
+
+### 4.5 自动化：什么时候自动跑
+
+一套判据，两处触发，都只调 `python src/harness.py`，不复制任何判断逻辑：
+
+| 触发 | 载体 | 行为 |
+|---|---|---|
+| push / PR | `.github/workflows/verify.yml` | 自动跑 harness；失败则 job 标红，报告追加到 Actions 的 Summary，另存 JSON artifact |
+| 提交前 | `.githooks/pre-commit` | 红了直接中止 commit，并打印失败项 |
+
+hook 在 `.git/hooks` 之外，**克隆后要启用一次**（`.git` 里的东西不入库）：
+
+```bash
+git config core.hooksPath .githooks
+```
+
+临时跳过本地那一次：`SKIP_HARNESS=1 git commit ...`。CI 不认这个开关——跳过只影响你自己这一次。
+
+CI 不装 Pillow：harness 只做文本复算与存在性判断，PNG 的同步由生成器一次写三份保证。
+
 ---
 
 ## 五、方法与纪律
@@ -158,7 +180,7 @@ python src/render_stakeholders.py --check # 只校验坐标、否决类型与证
 6. **图由代码生成**。改流程就改数据，图和文档不会各说一套。
 7. **假设要能被推翻**。价值假设一律写成"若…那么…｜怎么验｜什么情况下不成立"（`现状基线与价值假设.md` §4）。
 8. **不越界**。阶段 1 不画目标态、不给方案、不承诺收益。
-9. **交付前先跑 `python src/harness.py`**。绿了才算交付完成；红了先修，不许在报告里写"已知问题"绕过。
+9. **交付前先跑 `python src/harness.py`**。绿了才算交付完成；红了先修，不许在报告里写"已知问题"绕过。CI 与 pre-commit 会自动跑，但那是兜底，不是替你判断的借口。
 10. **校验项必须能被证伪**。新加一条检查，要先用一次**故意注入的错**证明它会红——不会红的检查等于没有。这套 harness 的 L2-2 就是这么被揪出来的：最初正则写成 `B[1-6]`，越界的 `B7` 直接匹配不上，反向测试才暴露。<!-- harness:ignore B7 -->
 
 ---

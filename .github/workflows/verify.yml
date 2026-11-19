@@ -1,0 +1,55 @@
+name: verify
+
+# 一套判据，两处触发：这里是 CI，本地对应 .githooks/pre-commit。
+# 两者都只调 python src/harness.py，不复制判断逻辑——判据只有一个真源。
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  harness:
+    name: 交付物自洽校验
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # 不装 Pillow：harness 只做文本复算与存在性判断。
+      # PNG 的同步靠生成器一次写三份保证，校验覆盖可复算的 svg / mmd。
+      - name: 跑 harness
+        shell: bash
+        run: |
+          set +e
+          python src/harness.py
+          code=$?
+          # 报告落到 Actions 的 Summary，评审不必翻日志找哪一项红了
+          if [ -f "docs/校验报告.md" ]; then
+            {
+              echo ""
+              echo "---"
+              cat "docs/校验报告.md"
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit $code
+
+      - name: 结构化结果
+        if: always()
+        shell: bash
+        run: python src/harness.py --json > harness-report.json || true
+
+      - name: 上传报告
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: harness-report
+          path: |
+            harness-report.json
+            docs/校验报告.md
+          if-no-files-found: warn
+          retention-days: 14

@@ -1,0 +1,3 @@
+# 钩子由 sh 执行，必须保持 LF。CRLF 会让 shebang 变成 /bin/sh^M
+# 在 Linux/macOS 克隆后直接报 bad interpreter，而本地 Windows 看不出问题。
+.githooks/** text eol=lf
