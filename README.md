@@ -71,6 +71,7 @@ volunteer/
 │   ├── 现状基线与价值假设.md    # 任务 2/3 交付：三口径基线、M1–M6、VH-1～VH-6
 │   ├── 项目章程与利益相关者地图.md  # 任务 3/3 交付：章程、决策链、授权与边界
 │   ├── 平台提交稿.md           # 三段结论，可直接粘进平台文本框
+│   ├── 校验报告.md             # 自动生成的质量门（harness 产出，勿手改）
 │   ├── 图/
 │   │   ├── 现状流程图.svg / .png / .mmd
 │   │   └── 利益相关者地图.svg / .png / .mmd
@@ -80,6 +81,7 @@ volunteer/
 │       ├── 03-业务发现访谈问题库.html
 │       └── 04-利益相关者资料与分工.html
 └── src/
+    ├── harness.py             # 统一校验：14 项分四层，一条命令出报告
     ├── build_ledger.py        # JSON → CSV，并校验证据编号 / 断点覆盖 / 凭证状态
     ├── render_flow.py         # 现状流程图：一份定义 → SVG + PNG + Mermaid
     └── render_stakeholders.py # 利益相关者地图：象限 + 决策链，并核对证据编号是否真的存在
@@ -89,29 +91,59 @@ volunteer/
 
 ## 四、怎么跑
 
-只依赖 Python 3.10+ 标准库（`render_flow.py` 生成 PNG 时用 Pillow）：
+只依赖 Python 3.10+ 标准库（`render_flow.py` / `render_stakeholders.py` 生成 PNG 时用 Pillow）。
+
+### 4.1 一条命令跑完所有校验（推荐）
 
 ```bash
-# 1. 校验调研记录并生成台账
-python src/build_ledger.py          # 生成 docs/调研记录.csv
-python src/build_ledger.py --check  # 只校验，出错返回非零（可挂 CI）
+python src/harness.py            # 14 项全跑，刷新 docs/校验报告.md
+python src/harness.py --list     # 列出检查项，以及每一项"在防什么"
+python src/harness.py --only L2  # 只查证据可追溯
+python src/harness.py --json     # CI 取结构化结果
+```
 
-# 2. 重画现状流程图
+退出码 `0` 通过、`1` 有 blocker 失败、`2` harness 自身出错——可以直接挂 CI，不需要额外写判定逻辑。
+
+### 4.2 四层，各管一段
+
+| 层 | 管什么 | 覆盖范围 |
+|---|---|---|
+| **L1 台账自洽** | JSON 自身合法、证据编号不重复、CSV 是 JSON 的忠实投影 | 36 条证据 / 6 位访谈 / 6 个断点 |
+| **L2 证据可追溯** | 文档里每个 `INT-xx-nn`、`Bx`、`DOC-xx` 都能在台账里落地 | 8 篇 Markdown 全量扫描 |
+| **L3 图与定义一致** | SVG 是否真是当前定义导出的（不是上一版） | 流程图 15 节点 / 地图 6 角色 |
+| **L4 文档层** | 交付物齐套、本地链接能点开、新文档进了索引、统计数字没过期 | 21 个交付文件 |
+
+每一层都对应一类**单看任何一个脚本都发现不了**的毛病：改了 JSON 忘重生成 CSV、结论引用台账里没有的证据、改了流程忘重跑脚本、README 链接指向改过名的文件。所以它不是三个 `--check` 的包装，而是补上了跨文件那一段。
+
+`docs/校验报告.md` 是这条命令的产物，逐条列「编号 / 检查项 / 这一项在防什么 / 结论」，评审可以顺着报告反向核对，不用信我口头说"都查过了"。
+
+### 4.3 单独重跑某个生成器
+
+```bash
+# 1. 台账
+python src/build_ledger.py          # 生成 docs/调研记录.csv
+python src/build_ledger.py --check  # 只校验，出错返回非零
+
+# 2. 现状流程图
 python src/render_flow.py           # 生成 docs/图/ 下的 svg / png / mmd
 python src/render_flow.py --check   # 只校验节点、连线和断点编号
 
-# 3. 重画利益相关者地图
+# 3. 利益相关者地图
 python src/render_stakeholders.py         # 生成 docs/图/利益相关者地图.svg / .png / .mmd
-python src/render_stakeholders.py --check # 只校验坐标、否决类型，以及引用的证据编号是否真的存在
+python src/render_stakeholders.py --check # 只校验坐标、否决类型与证据编号
 ```
 
-校验会拦住五类常见毛病：
+改了任何数据源，重跑生成器之后**再跑一次 harness**：L1-3 和 L3-2/L3-4 就是专门盯"生成物过期"的。
 
-- 证据编号与所属访谈不一致；
-- 结论引用了没有访谈记录支撑的断点；
-- 标了原始凭证编号，却把状态写成"不适用"；
-- 地图上引用了台账里不存在的证据编号；
-- 访谈对象漏了一个没上地图（六个人必须全在）。
+### 4.4 误报了怎么办
+
+不许删检查。在那一行末尾加注释申辩：
+
+```markdown
+…越界的 `B7` 直接匹配不上… <!-- harness:ignore B7 -->
+```
+
+`<!-- harness:ignore -->` 跳过整行，`<!-- harness:ignore B7 DOC-05 -->` 只放过指定 token。误报说明检查的判据还不够细，而不是说明检查不该存在——先把豁免写清楚，再回头改判据。
 
 ---
 
@@ -125,6 +157,8 @@ python src/render_stakeholders.py --check # 只校验坐标、否决类型，以
 6. **图由代码生成**。改流程就改数据，图和文档不会各说一套。
 7. **假设要能被推翻**。价值假设一律写成"若…那么…｜怎么验｜什么情况下不成立"（`现状基线与价值假设.md` §4）。
 8. **不越界**。阶段 1 不画目标态、不给方案、不承诺收益。
+9. **交付前先跑 `python src/harness.py`**。绿了才算交付完成；红了先修，不许在报告里写"已知问题"绕过。
+10. **校验项必须能被证伪**。新加一条检查，要先用一次**故意注入的错**证明它会红——不会红的检查等于没有。这套 harness 的 L2-2 就是这么被揪出来的：最初正则写成 `B[1-6]`，越界的 `B7` 直接匹配不上，反向测试才暴露。<!-- harness:ignore B7 -->
 
 ---
 
