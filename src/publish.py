@@ -62,20 +62,36 @@ class PublishError(RuntimeError):
         self.msg = msg
 
 
-def git(*args: str) -> subprocess.CompletedProcess[str]:
+# 单个 git 子命令的上限。推送要留足时间：Windows 上凭据管理器
+# （git-credential-manager）首次取凭据实测要 30 秒以上，把超时设短会误报失败。
+GIT_TIMEOUT = 300
+
+
+def git(*args: str, timeout: int = 120) -> subprocess.CompletedProcess[str]:
     """在仓库根目录执行一条 git 命令。
 
-    入参：args 为 git 子命令与参数（如 "add", "-A"）。
+    入参：args 为 git 子命令与参数（如 "add", "-A"）；timeout 为秒数上限。
     出参：CompletedProcess，含 returncode/stdout/stderr。
-    失败：git 不存在时抛 PublishError(GIT_FAILED)——这比让调用方拿到一个
-         空 stdout 去猜"为什么没有改动"要好得多。
+    失败：git 不存在抛 PublishError(GIT_FAILED)；超时也抛 GIT_FAILED——
+         脚本绝不能挂在等待输入上。
+
+    为什么 stdin 指向 DEVNULL：第一次写成继承父进程 stdin，`git push` 在
+    凭据管理器要交互时直接无限等待，进程挂了 5 分钟没有任何输出。禁掉 stdin
+    之后，需要人处理的认证会立刻失败并报出来，而不是静默卡住。
     """
     try:
         return subprocess.run(
-            ["git", *args], cwd=ROOT, capture_output=True, text=True, encoding="utf-8",
+            ["git", *args], cwd=ROOT, capture_output=True, text=True,
+            encoding="utf-8", stdin=subprocess.DEVNULL, timeout=timeout,
         )
     except FileNotFoundError as exc:
         raise PublishError("GIT_FAILED", "找不到 git 命令，请先安装或加入 PATH") from exc
+    except subprocess.TimeoutExpired as exc:
+        raise PublishError(
+            "GIT_FAILED",
+            f"git {' '.join(args)} 超过 {timeout}s 没结束，已放弃。"
+            "检查网络与凭据管理器（可能需要先在终端里手动登录一次）。",
+        ) from exc
 
 
 def git_or_fail(*args: str) -> str:
@@ -226,7 +242,16 @@ def commit_and_push(message: str) -> dict[str, Any]:
     git_or_fail("commit", "-m", message or DEFAULT_MESSAGE)
     sha = git_or_fail("rev-parse", "--short", "HEAD")
 
-    push = git("push")
+    # 推送单独兜一层：走到这里提交一定已经写成，报错必须带上这个事实，
+    # 否则使用者会以为"没推上去＝什么都没发生"，然后重跑一次生成第二次提交。
+    try:
+        push = git("push", timeout=GIT_TIMEOUT)
+    except PublishError as exc:
+        raise PublishError(
+            "PUSH_FAILED",
+            f"已提交 {sha}，但推送未完成：{exc.msg}。本地提交保留，"
+            "处理好网络/凭据后直接重跑一次 git push 即可，不必重新发布。",
+        ) from exc
     if push.returncode != 0:
         detail = (push.stderr or push.stdout).strip() or "未知原因"
         raise PublishError(
