@@ -1,0 +1,100 @@
+# 全项目唯一的配置来源。代码里不再出现任何路径、字体、清单硬编码。
+#
+# 放这里的原则：
+#   1. 与环境有关（路径、字体候选）——换台机器就该改这里，不该改代码；
+#   2. 与项目身份有关（案例编号、阶段、标题）——复用同一套脚本做别的案例时只改这里；
+#   3. 会随交付物增减而变（deliverables）——这是清单，不是逻辑。
+# 不放在这里的：版面几何（宽高、间距）与图示文案。那是绘图代码的一部分，
+# 抽成配置只会让渲染逻辑更难读，而且改一个数字就要同步改算法。
+
+project:
+  case_id: dlg-sports-volunteers
+  stage: "1/9"
+  title: 赛事志愿者排班与交接
+
+paths:
+  # 全部相对于仓库根目录，允许用正斜杠（Windows 上也一样）
+  readme: README.md
+  docs: docs
+  figures: docs/图
+  ledger: docs/调研记录.json
+  ledger_csv: docs/调研记录.csv
+  report: docs/校验报告.md
+
+ledger:
+  # 台账的枚举与列顺序。列顺序同时决定 CSV 的列顺序，
+  # 改这里会让已生成的 CSV 过期——harness 的 L1-3 会立刻报出来。
+  id_pattern: '^(INT-\d{2})-(\d{2})$'
+  interview_pattern: '^INT-\d{2}$'
+  types:
+    - 事实陈述
+    - 判断
+    - 待核
+  doc_status:
+    - 待补
+    - 已取得
+    - 不适用
+  columns:
+    - 证据编号
+    - 访谈编号
+    - 访谈对象
+    - 角色
+    - 核对重点
+    - 条目主题
+    - 陈述要点
+    - 原话摘录
+    - 证据性质
+    - 关联断点
+    - 原始凭证
+    - 凭证状态
+    - 交叉核对
+    - 差异/冲突
+
+fonts:
+  # 按顺序取第一个存在的文件。PNG 渲染用；SVG 只写字体族名，不需要文件。
+  # 全都不存在时报 FONT_MISSING，并把这几个路径原样告诉使用者——
+  # 不猜、不静默退化成默认字体（那会让中文字变方块，而校验看不出来）。
+  candidates:
+    - C:/Windows/Fonts/msyh.ttc
+    - C:/Windows/Fonts/msyhbd.ttc
+    - /System/Library/Fonts/PingFang.ttc
+    - /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc
+    - /usr/share/fonts/truetype/wqy/wqy-zenhei.ttc
+
+figures:
+  flow:
+    base: 现状流程图
+  stakeholders:
+    base: 利益相关者地图
+
+harness:
+  # 这些是生成物，不参与"文档"扫描：它们每跑一次都会变，
+  # 当成普通文档扫会让 L2/L4 反复报自己造出来的问题。
+  skip_docs:
+    - 校验报告.md
+  # 交付清单：平台按这个清单验收。新增交付物必须登记在这里，
+  # L4-1 查"齐不齐"，L4-5 查"这份清单自己有没有过期"。
+  deliverables:
+    - README.md
+    - LICENSE
+    - config.yaml
+    - requirements.txt
+    - docs/业务挖掘.md
+    - docs/调研记录.md
+    - docs/调研记录.json
+    - docs/调研记录.csv
+    - docs/现场调研分析.md
+    - docs/现状流程图.md
+    - docs/现状基线与价值假设.md
+    - docs/项目章程与利益相关者地图.md
+    - docs/平台提交稿.md
+    - docs/原始资料/01-客户简报.html
+    - docs/原始资料/02-现状信息请求表.html
+    - docs/原始资料/03-业务发现访谈问题库.html
+    - docs/原始资料/04-利益相关者资料与分工.html
+    - docs/图/现状流程图.svg
+    - docs/图/现状流程图.png
+    - docs/图/现状流程图.mmd
+    - docs/图/利益相关者地图.svg
+    - docs/图/利益相关者地图.png
+    - docs/图/利益相关者地图.mmd

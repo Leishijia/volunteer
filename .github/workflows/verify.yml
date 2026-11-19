@@ -20,6 +20,11 @@ jobs:
         with:
           python-version: "3.12"
 
+      # 读 config.yaml 需要 PyYAML。只装 requirements.txt 里声明的那一份，
+      # 保证 CI 与本地依赖完全一致（不在这里零散 pip install）。
+      - name: 安装依赖
+        run: python -m pip install -r requirements.txt
+
       # 不装 Pillow：harness 只做文本复算与存在性判断。
       # PNG 的同步靠生成器一次写三份保证，校验覆盖可复算的 svg / mmd。
       - name: 跑 harness
@@ -38,10 +43,14 @@ jobs:
           fi
           exit $code
 
+      # 统一结构自检：harness 自己也是对外接口，--json 的形状不能例外。
+      # 这里不依赖 harness 内的 L5-3（那只覆盖另外三个脚本）。
       - name: 结构化结果
         if: always()
         shell: bash
-        run: python src/harness.py --json > harness-report.json || true
+        run: |
+          python src/harness.py --json > harness-report.json || true
+          python -c "import json;d=json.load(open('harness-report.json',encoding='utf-8'));assert set(d)=={'ok','data','error'},sorted(d);print('统一结构 OK：ok =',d['ok'],'| verdict =',(d.get('data') or {}).get('verdict'))"
 
       - name: 上传报告
         if: always()

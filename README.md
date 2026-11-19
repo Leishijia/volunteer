@@ -61,6 +61,8 @@
 volunteer/
 ├── README.md                  # 本文件：结论、索引、怎么跑
 ├── LICENSE                    # MIT
+├── config.yaml                # 全项目唯一配置：路径、字体、枚举、交付清单
+├── requirements.txt           # 依赖（PyYAML；Pillow 可选，注释掉了）
 ├── .github/workflows/verify.yml  # CI：push / PR 自动跑 harness
 ├── .githooks/pre-commit       # 提交前拦一道（克隆后需 git config core.hooksPath .githooks）
 ├── docs/
@@ -82,7 +84,9 @@ volunteer/
 │       ├── 03-业务发现访谈问题库.html
 │       └── 04-利益相关者资料与分工.html
 └── src/
-    ├── harness.py             # 统一校验：17 项分四层，一条命令判定能否交付
+    ├── harness.py             # 统一校验：20 项分五层，一条命令判定能否交付
+    ├── settings.py            # 配置装载：路径/字体/清单的唯一入口，读不到就报错不猜
+    ├── envelope.py            # 对外接口统一结构 {ok,data,error} 与退出码映射
     ├── build_ledger.py        # JSON → CSV，并校验证据编号 / 断点覆盖 / 凭证状态
     ├── render_flow.py         # 现状流程图：一份定义 → SVG + PNG + Mermaid
     └── render_stakeholders.py # 利益相关者地图：象限 + 决策链，并核对证据编号是否真的存在
@@ -92,27 +96,34 @@ volunteer/
 
 ## 四、怎么跑
 
-只依赖 Python 3.10+ 标准库（`render_flow.py` / `render_stakeholders.py` 生成 PNG 时用 Pillow）。
+Python 3.10+，第三方依赖只有 **PyYAML**（读 `config.yaml`）；生成 PNG 另需 Pillow（可选，CI 不装）。
+
+```bash
+pip install -r requirements.txt
+```
+
+配置全部在 [`config.yaml`](config.yaml)：路径、字体候选、台账列名与枚举、交付清单。代码里不写死任何路径、字体或地址。
 
 ### 4.1 一条命令跑完所有校验（推荐）
 
 ```bash
-python src/harness.py            # 17 项全跑，刷新本地 docs/校验报告.md（不入库）
+python src/harness.py            # 20 项全跑，刷新本地 docs/校验报告.md（不入库）
 python src/harness.py --list     # 列出检查项，以及每一项"在防什么"
 python src/harness.py --only L2  # 只查证据可追溯
-python src/harness.py --json     # CI 取结构化结果
+python src/harness.py --json     # CI 取统一结构 {"ok","data","error"}
 ```
 
 退出码 `0` 通过、`1` 有 blocker 失败、`2` harness 自身出错——可以直接挂 CI，不需要额外写判定逻辑。
 
-### 4.2 四层，各管一段
+### 4.2 五层，各管一段
 
 | 层 | 管什么 | 覆盖范围 |
 |---|---|---|
 | **L1 台账自洽** | JSON 自身合法、证据编号不重复、CSV 是 JSON 的忠实投影 | 36 条证据 / 6 位访谈 / 6 个断点 |
 | **L2 证据可追溯** | 文档里每个 `INT-xx-nn`、`Bx`、`DOC-xx` 都能在台账里落地 | 8 篇 Markdown 全量扫描 |
 | **L3 图与定义一致** | 6 个生成物（svg/png/mmd × 2）里能复算的 4 个，是否真是当前定义导出的 | 流程图 15 节点 / 地图 6 角色 |
-| **L4 文档层** | 交付物齐套、本地链接能点开、新文档进了索引、统计数字没过期 | 21 个交付文件 |
+| **L4 文档层** | 交付物齐套、本地链接能点开、新文档进了索引、统计数字没过期 | 23 个交付文件 |
+| **L5 代码规范** | 函数都有中文 docstring、代码里没有硬编码路径/地址、三个 CLI 的 `--json` 形状与退出码同向 | 6 个源文件 |
 
 每一层都对应一类**单看任何一个脚本都发现不了**的毛病：改了 JSON 忘重生成 CSV、结论引用台账里没有的证据、改了流程忘重跑脚本、README 链接指向改过名的文件。所以它不是三个 `--check` 的包装，而是补上了跨文件那一段。
 
@@ -166,10 +177,36 @@ git config core.hooksPath .githooks
 
 临时跳过本地那一次：`SKIP_HARNESS=1 git commit ...`。CI 不认这个开关——跳过只影响你自己这一次。
 
-CI 不装 Pillow：harness 只做文本复算与存在性判断，PNG 的同步由生成器一次写三份保证。
+CI 不装 Pillow，但**要装 PyYAML**（`pip install -r requirements.txt`）——读 `config.yaml` 靠它。本地克隆后同样要装一次，否则 hook 会以退出码 2 中止提交并提示装依赖。
 
 CSV 的同步比对按**内容**做，不比字节：CSV 是文本文件，git 检出时会按平台转换行尾（Windows 给 CRLF、Linux 给 LF）。比字节会让本地绿、CI 红，而且报出来的
 「重新生成」根本修不好——内容本来就是一致的。这个坑 CI 第一次跑就踩到了。
+
+
+### 4.6 代码规范
+
+四条规范，能机器验的已经做成了 L5 检查，验不了的如实标注：
+
+| 规范 | 怎么落地 | 谁在守 |
+|---|---|---|
+| 每个函数写中文 docstring，说清**入参 / 出参 / 失败时的行为** | `src/*.py` 全部函数（含 `to_png` 里的嵌套闭包）统一三段式 | **L5-1**（warn） |
+| 关键业务逻辑写"**为什么**这么卡"的行内注释 | 校验只收错误不提前返回、CSV 比内容不比字节、报告排除自身路径、断点必须有人说过……每处都写清"不这么做会怎样" | 评审（无法自动验） |
+| 配置统一进 `config.yaml`，禁止硬编码密钥 / 地址 / 路径 | 路径、字体候选、列名枚举、交付清单全部经 `settings.py` 读配置；`src/` 里出现盘符、系统目录或 http 地址即判失败 | **L5-2**（blocker） |
+| 对外接口统一返回 `{"ok": bool, "data": …, "error": {"code","msg"}}` | 四个 CLI 的成功与失败都由 `envelope.py` 构造；`--json` 输出同一形状，且 `ok` 必须与退出码同向 | **L5-3**（blocker） |
+
+**为什么第二条不做成检查**：机器只能验"有没有注释"，验不了"注释解不解释为什么"。真做成检查，用 `# 增加一行` 这种注释就能骗过去——那种检查比没有更糟，因为它给了虚假的保证。所以这条只写进评审清单。
+
+**接口形状的机器判定标准**（L5-3 实际执行）：真去跑 `python src/<脚本>.py --check --json`，解析 stdout，要求顶层键恰好是 `ok/data/error`、`ok` 是布尔值、失败时 `error` 含 `code` 与 `msg`、且 `ok=True ⟺ 退出码 0`。最后一条最要紧：CI 看退出码、hook 看 `ok`，两者不同向就会得出相反结论。
+
+**错误码**（稳定，可编程判断）：
+
+| code | 含义 | 退出码 |
+|---|---|---|
+| `VALIDATION_FAILED` | 内容不合格，改内容 | 1 |
+| `INPUT_MISSING` / `INPUT_INVALID` | 输入文件缺失或格式坏 | 2 |
+| `CONFIG_MISSING` / `CONFIG_INVALID` | `config.yaml` 缺失或写错 | 2 |
+| `DEPENDENCY_MISSING` / `FONT_MISSING` | 依赖没装、字体候选全不存在 | 2 |
+| `NO_CHECKS_MATCHED` | `--only` 没匹配到任何检查项 | 2 |
 
 ---
 
@@ -185,6 +222,7 @@ CSV 的同步比对按**内容**做，不比字节：CSV 是文本文件，git �
 8. **不越界**。阶段 1 不画目标态、不给方案、不承诺收益。
 9. **交付前先跑 `python src/harness.py`**。绿了才算交付完成；红了先修，不许在报告里写"已知问题"绕过。CI 与 pre-commit 会自动跑，但那是兜底，不是替你判断的借口。
 10. **校验项必须能被证伪**。新加一条检查，要先用一次**故意注入的错**证明它会红——不会红的检查等于没有。这套 harness 的 L2-2 就是这么被揪出来的：最初正则写成 `B[1-6]`，越界的 `B7` 直接匹配不上，反向测试才暴露。<!-- harness:ignore B7 -->
+11. **规范要能被机器验，否则三周后就没了**。写进 README 的约定不如写进 harness 的检查：`L5-1`～`L5-3` 就是四条代码规范里能自动判的三条；判不了的那条明确写"只靠评审"，不假装覆盖。
 
 ---
 

@@ -8,10 +8,14 @@
 用法：
     python src/render_flow.py            # 生成到 docs/图/
     python src/render_flow.py --check    # 只校验定义（节点 id 唯一、连线端点存在、断点编号合法）
+    python src/render_flow.py --json     # 输出统一结构 {"ok","data","error"}
 
 约定：
   - 节点标签里 `\\n` 换行，`B{n}` 表示该节点对应文档中的断点编号。
   - `system=False` 的节点画虚线：表示这个动作不产生系统记录，只在纸面 / 群里。
+
+输出目录、文件名主干、字体都来自 config.yaml（paths.figures / figures.flow.base /
+fonts.candidates），代码里不写死。版面几何留在代码里——它和绘制算法绑在一起。
 """
 from __future__ import annotations
 
@@ -19,9 +23,10 @@ import argparse
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
-ROOT = Path(__file__).resolve().parents[1]
-OUT_DIR = ROOT / "docs" / "图"
+import envelope
+import settings
 
 LANES = [
     ("lan0", "流程协调员（赛务）"),
@@ -36,6 +41,8 @@ VALID_BREAKS = {"B1", "B2", "B3", "B4", "B5", "B6"}
 
 @dataclass(frozen=True)
 class Node:
+    """流程图上的一个节点（泳道 + 行号定位，一行只能放一个）。"""
+
     nid: str
     lane: str
     row: int
@@ -46,6 +53,8 @@ class Node:
 
 @dataclass(frozen=True)
 class Edge:
+    """一条连线。kind 决定线型与颜色：flow 实线 / record 虚线 / handover 褐色虚线。"""
+
     src: str
     dst: str
     kind: str = "flow"           # flow | record | handover
@@ -99,16 +108,36 @@ LANE_HEADER_H = 46
 
 
 def lane_x(lane_id: str) -> int:
+    """泳道左边缘的 x 坐标。
+
+    入参：lane_id 为泳道编号（lan0…lan4）。
+    出参：该泳道左边缘的像素 x。
+    失败：编号不存在时抛 ValueError。不做兜底——画到错误位置比直接报错
+         更难发现，而这张图的用途正是给人看"东西在哪一步丢了"。
+    """
     return PAD_X + [l[0] for l in LANES].index(lane_id) * LANE_W
 
 
 def node_xy(n: Node) -> tuple[int, int]:
+    """节点的左上角像素坐标。
+
+    入参：n 为节点定义。
+    出参：(x, y)。
+    失败：n.lane 非法时由 lane_x() 抛 ValueError。
+    """
     x = lane_x(n.lane) + (LANE_W - NODE_W) // 2
     y = PAD_Y + LANE_HEADER_H + n.row * ROW_H
     return x, y
 
 
 def validate() -> list[str]:
+    """校验图定义自身是否自洽。
+
+    入参：无（定义就是本模块的 LANES/NODES/EDGES）。
+    出参：问题列表；空列表表示通过。
+    失败：不抛异常，所有问题收集后一并返回——图定义是手改的，
+         一次只报一条要来回跑好几遍。
+    """
     errs: list[str] = []
     ids = [n.nid for n in NODES]
     if len(ids) != len(set(ids)):
@@ -117,9 +146,13 @@ def validate() -> list[str]:
     for n in NODES:
         if n.lane not in lane_ids:
             errs.append(f"{n.nid} 的泳道 {n.lane} 不存在")
+        # 断点编号必须落在真实存在的断点集合里：图上的红字是读者
+        # 翻回文档找依据的入口，写个 B7 出来就是死链。
         for b in n.breaks:
             if b not in VALID_BREAKS:
                 errs.append(f"{n.nid} 的断点编号 {b} 不合法")
+    # 同泳道同行只能放一个节点：两个框叠在一起时 SVG 不会报错，
+    # 只会静默变成"后画的盖住先画的"，而读者以为其中一个丢了。
     pos = {}
     for n in NODES:
         key = (n.lane, n.row)
@@ -135,7 +168,14 @@ def validate() -> list[str]:
 
 
 def route(s: Node, d: Node) -> tuple[list[tuple[float, float]], str]:
-    """正交走线。同一行就横着连，跨行就下-横-下，避免绕到别的节点上。"""
+    """计算两个节点之间的正交走线。
+
+    入参：s 起点节点，d 终点节点。
+    出参：(折线点列表, 箭头方向)。方向取值 right/left/down，供 PNG 画箭头用。
+    失败：节点坐标非法时由 node_xy() 抛 ValueError。
+
+    走线策略：同一行就横着连，跨行就"下-横-下"，避免绕到别的节点上。
+    """
     sx, sy = node_xy(s)
     dx, dy = node_xy(d)
     if s.row == d.row:
@@ -150,6 +190,12 @@ def route(s: Node, d: Node) -> tuple[list[tuple[float, float]], str]:
 
 
 def node_label(n: Node) -> list[str]:
+    """节点的显示文本行。
+
+    入参：n 为节点定义（text 里用 \\n 分行）。
+    出参：文本行列表；有断点时最后一行是"断点 Bx By"，渲染时单独用红色。
+    失败：不抛异常。
+    """
     parts = n.text.split("\n")
     if n.breaks:
         parts.append("断点 " + " ".join(n.breaks))
@@ -159,6 +205,16 @@ def node_label(n: Node) -> list[str]:
 # ---------------------------------------------------------------- SVG
 
 def to_svg() -> str:
+    """把定义渲染成 SVG 文本。
+
+    入参：无。
+    出参：完整 SVG 文档字符串（不含尾随换行）。
+    失败：不抛异常；但调用前应先跑 validate()——几何计算假定定义自洽，
+         端点不存在时会在这里抛 StopIteration。
+
+    为什么返回字符串而不是直接写文件：harness 要拿"当前定义能产出的结果"
+    与磁盘上的文件逐字比对，判断图是不是上一版的残留。写成文件就没法比。
+    """
     width = PAD_X * 2 + LANE_W * len(LANES)
     rows = max(n.row for n in NODES) + 1
     height = PAD_Y + LANE_HEADER_H + rows * ROW_H + 56
@@ -213,12 +269,26 @@ def to_svg() -> str:
 
 
 def escape(s: str) -> str:
+    """转义 XML 特殊字符。
+
+    入参：s 为原始文本。
+    出参：可安全放进 SVG <text> 的字符串。
+    失败：不抛异常。只处理 & < > 三个——引号在文本节点里不构成风险，
+         多余转义只会让图上的字变成 &quot;。
+    """
     return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
 # ---------------------------------------------------------------- Mermaid
 
 def to_mmd() -> str:
+    """把定义渲染成 Mermaid 文本。
+
+    入参：无。
+    出参：可直接被 GitHub / 编辑器渲染的 flowchart 源码，结尾带一个换行。
+    失败：不抛异常；端点缺失同样会画出一条指向不存在节点的连线，
+         所以调用前应跑 validate()。
+    """
     out = ["flowchart TD"]
     for lid, lname in LANES:
         out.append(f'  subgraph {lid}["{lname}"]')
@@ -244,9 +314,19 @@ def to_mmd() -> str:
 # ---------------------------------------------------------------- PNG
 
 def to_png(path: Path) -> None:
+    """把定义渲染成 PNG 文件。
+
+    入参：path 为输出文件路径（目录须已存在）。
+    出参：无，副作用是写文件。
+    失败：没装 Pillow 抛 ModuleNotFoundError；config.yaml 里字体候选全不存在
+         抛 settings.ConfigError("FONT_MISSING")；磁盘写入错误原样抛出。
+         三种错误都不吞——PNG 是给人看的最终产物，静默失败等于交了一张旧图。
+    """
     from PIL import Image, ImageDraw, ImageFont
 
-    font_path = "C:/Windows/Fonts/msyh.ttc"
+    # 字体由配置决定，不写死路径：Windows 有 msyh，Linux CI 上是 Noto，
+    # 写死任一个都会在另一台机器上变成方块字。
+    font_path = str(settings.font_path())
     f_title = ImageFont.truetype(font_path, 17)
     f_node = ImageFont.truetype(font_path, 15)
     f_small = ImageFont.truetype(font_path, 13)
@@ -264,6 +344,13 @@ def to_png(path: Path) -> None:
         d.text((x + LANE_W / 2, PAD_Y + 22), lname, font=f_title, fill="#2D654F", anchor="mm")
 
     def arrow(points, head, color="#5C7A5C", dashed=False):
+        """画一条折线并在末端加箭头。
+
+        入参：points 折线点列表；head 箭头方向（down/right/left）；
+              color 颜色；dashed 是否画虚线。
+        出参：无，直接画在 d 上。
+        失败：点列表少于两个时什么都不画（不会抛异常）。
+        """
         for a, b in zip(points, points[1:]):
             if dashed:
                 dx, dy = b[0] - a[0], b[1] - a[1]
@@ -310,27 +397,85 @@ def to_png(path: Path) -> None:
     img.save(path)
 
 
-def main(argv: list[str]) -> int:
-    ap = argparse.ArgumentParser(description="渲染现状流程图（AS-IS）")
-    ap.add_argument("--check", action="store_true", help="只校验定义，不写文件")
-    args = ap.parse_args(argv)
+def render(check_only: bool = False) -> dict[str, Any]:
+    """校验定义并按需生成三种格式，返回统一结构。
 
+    入参：check_only=True 时只校验、不写文件。
+    出参：{"ok","data","error"}。成功时 data 含节点/连线/泳道数与三个文件路径；
+         定义不合法时 ok=False、code=VALIDATION_FAILED，data.errors 里带明细。
+    失败：Pillow 缺失报 DEPENDENCY_MISSING，字体缺失报 FONT_MISSING，
+         均转成失败响应而不是抛栈——调用方（harness / CI / hook）
+         只认统一结构，不该去解析 traceback。
+    """
     errs = validate()
     if errs:
-        for e in errs:
-            print("ERROR:", e)
-        return 1
-    print(f"定义校验通过：{len(NODES)} 个节点、{len(EDGES)} 条连线、{len(LANES)} 条泳道")
-    if args.check:
-        print("（单点自检：只管本图定义，交付判定请跑 python src/harness.py）")
-        return 0
+        # 不在这里 print：--json 模式下多余输出会污染 stdout，错误明细放 data.errors
+        return envelope.fail("VALIDATION_FAILED", f"{len(errs)} 处定义问题",
+                             data={"errors": errs})
 
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
-    (OUT_DIR / "现状流程图.svg").write_text(to_svg(), encoding="utf-8")
-    (OUT_DIR / "现状流程图.mmd").write_text(to_mmd(), encoding="utf-8")
-    to_png(OUT_DIR / "现状流程图.png")
-    print(f"已生成：{OUT_DIR / '现状流程图.svg'} / .png / .mmd")
-    return 0
+    base, svg_p, png_p, mmd_p = settings.figure("flow")
+    data: dict[str, Any] = {
+        "figure": base,
+        "nodes": len(NODES),
+        "edges": len(EDGES),
+        "lanes": len(LANES),
+        "files": [],
+        "check_only": check_only,
+    }
+    if check_only:
+        return envelope.ok(data)
+
+    # 目录不存在就建：图是产物，产物目录属于本工具自己管理。
+    svg_p.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        svg_p.write_text(to_svg(), encoding="utf-8")
+        mmd_p.write_text(to_mmd(), encoding="utf-8")
+        to_png(png_p)
+    except ModuleNotFoundError as exc:
+        return envelope.fail(
+            "DEPENDENCY_MISSING",
+            f"生成 PNG 需要 Pillow：pip install Pillow（原始错误：{exc}）",
+            data=data,
+        )
+
+    data["files"] = [str(svg_p), str(png_p), str(mmd_p)]
+    return envelope.ok(data)
+
+
+def main(argv: list[str]) -> int:
+    """命令行入口。
+
+    入参：argv 为去掉程序名后的参数。
+    出参：进程退出码（0 成功 / 1 定义不合格 / 2 环境问题）。
+    失败：配置与依赖问题不抛异常，转成统一结构输出，保证 CI 拿到稳定退出码。
+    """
+    ap = argparse.ArgumentParser(description="渲染现状流程图（AS-IS）")
+    ap.add_argument("--check", action="store_true", help="只校验定义，不写文件")
+    ap.add_argument("--json", action="store_true", help="输出统一结构 JSON")
+    args = ap.parse_args(argv)
+
+    try:
+        resp = render(check_only=args.check)
+    except settings.ConfigError as exc:
+        resp = envelope.from_exception(exc)
+
+    if resp["ok"]:
+        d = resp["data"]
+        lines = [f"定义校验通过：{d['nodes']} 个节点、{d['edges']} 条连线、{d['lanes']} 条泳道"]
+        if d["check_only"]:
+            lines.append("（单点自检：只管本图定义，交付判定请跑 python src/harness.py）")
+        else:
+            lines.append(f"已生成：{d['files'][0]} / .png / .mmd")
+        text = "\n".join(lines)
+    elif resp["error"]["code"] == "VALIDATION_FAILED":
+        errs = (resp.get("data") or {}).get("errors", [])
+        text = "\n".join([f"定义校验未通过：{resp['error']['msg']}"]
+                         + [f"  · {e}" for e in errs])
+    else:
+        text = resp["error"]["msg"]
+
+    envelope.emit(resp, as_json=args.json, text=text)
+    return envelope.exit_code(resp)
 
 
 if __name__ == "__main__":

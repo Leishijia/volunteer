@@ -29,11 +29,13 @@ import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
-ROOT = Path(__file__).resolve().parents[1]
-OUT_DIR = ROOT / "docs" / "图"
-LEDGER = ROOT / "docs" / "调研记录.json"
+import envelope
+import settings
 
+# 输出目录/文件名/字体/项目身份都来自 config.yaml。这里只保留版面几何，
+# 因为宽高与间距和绘制算法绑在一起，拆到配置里反而容易改崩。
 EVID_RE = re.compile(r"^INT-\d{2}-\d{2}$")
 
 
@@ -105,19 +107,37 @@ QX, QY, QS = 80, 236, 640
 PLOT_PAD = 34
 R = 36
 
-FONT_PATH = "C:/Windows/Fonts/msyh.ttc"
-
 
 def quadrant_of(r: Role) -> tuple[bool, bool]:
+    """角色落在哪个象限。
+
+    入参：r 为角色定义（x=决定权、y=受影响程度，均为 0–1）。
+    出参：(是否高决定权, 是否高受影响)，以 0.5 为界。
+    失败：不抛异常；坐标越界由 validate() 拦截。
+    """
     return (r.x > 0.5, r.y > 0.5)
 
 
 def bubble_xy(r: Role) -> tuple[float, float]:
+    """角色气泡的中心坐标。
+
+    入参：r 为角色定义。
+    出参：(x, y) 像素坐标。y 轴取反——屏幕坐标向下增长，
+         而"受影响程度高"要画在上面，否则象限会上下颠倒。
+    失败：不抛异常。
+    """
     inner = QS - PLOT_PAD * 2
     return QX + PLOT_PAD + r.x * inner, QY + QS - PLOT_PAD - r.y * inner
 
 
 def validate() -> list[str]:
+    """校验地图定义与证据台账是否对得上。
+
+    入参：无（定义是本模块的 ROLES/CHAIN/QUADRANTS，台账路径来自配置）。
+    出参：问题列表；空列表表示通过。
+    失败：不抛异常。台账文件缺失也记成一条问题而不是抛 FileNotFoundError，
+         因为"台账没放对位置"和"地图引错了证据"对使用者是同一件事：得去查。
+    """
     errs: list[str] = []
     ids = [r.rid for r in ROLES]
     if len(ids) != len(set(ids)):
@@ -126,10 +146,11 @@ def validate() -> list[str]:
     if len(names) != len(set(names)):
         errs.append("角色姓名重复")
 
-    if not LEDGER.exists():
-        errs.append(f"找不到证据台账：{LEDGER}")
+    ledger = settings.path("ledger")
+    if not ledger.exists():
+        errs.append(f"找不到证据台账：{ledger}")
         return errs
-    data = json.loads(LEDGER.read_text(encoding="utf-8"))
+    data = json.loads(ledger.read_text(encoding="utf-8"))
     known = {i["id"] for iv in data["interviews"] for i in iv["items"]}
     who = {iv["who"] for iv in data["interviews"]}
 
@@ -138,14 +159,21 @@ def validate() -> list[str]:
             errs.append(f"{r.name} 坐标越界：({r.x}, {r.y})")
         if r.veto_style not in {"formal", "informal"}:
             errs.append(f"{r.name} 否决类型不合法：{r.veto_style}")
+        # 每个角色必须挂证据：地图上"谁能否决"是要拿去做决策依据的，
+        # 没有证据支撑的角色只是个印象，不该和"有访谈记录"的人画在一起。
         if not r.evidence:
             errs.append(f"{r.name} 没有引用任何证据")
+        # 证据编号必须真的存在于台账：写错一位（INT-05-03 写成 INT-05-30）
+        # 在图上完全看不出来，但读者按编号去查会查不到——这是最典型的
+        # "看起来有依据、实际无依据"，所以这里逐条比对，不做模糊匹配。
         for e in r.evidence:
             if not EVID_RE.match(e):
                 errs.append(f"{r.name} 的证据编号格式不对：{e}")
             elif e not in known:
                 errs.append(f"{r.name} 引用了台账里不存在的证据：{e}")
 
+    # 双向对账：访谈过的人必须全上图（漏一个就少一个决策环节），
+    # 图上也不能出现没访谈过的人（那等于凭空捏造一个角色）。
     missing = who - set(names)
     if missing:
         errs.append("访谈对象没上地图：" + "、".join(sorted(missing)))
@@ -158,7 +186,8 @@ def validate() -> list[str]:
         if n not in chain_names:
             errs.append(f"{n} 没有出现在决策链上")
 
-    # 气泡不能挤在一起
+    # 气泡不能挤在一起：叠在一起时 SVG 不会报错，只会互相压字，
+    # 而这张图的核心信息就是"谁离右上角更近"，压住了就读不出来。
     pts = [(r.name, *bubble_xy(r)) for r in ROLES]
     for i in range(len(pts)):
         for j in range(i + 1, len(pts)):
@@ -170,12 +199,44 @@ def validate() -> list[str]:
 
 
 def esc(s: str) -> str:
+    """转义 XML 特殊字符。
+
+    入参：s 为原始文本。
+    出参：可放进 SVG 文本节点的字符串。
+    失败：不抛异常。
+    """
     return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
+def header_text() -> tuple[str, str]:
+    """图头两行文字：主标题与副标题。
+
+    入参：无（案例编号、阶段、标题来自 config.yaml 的 project 段）。
+    出参：(主标题, 副标题)。SVG 与 PNG 共用，保证两种格式的图头一字不差。
+    失败：project 段缺字段时抛 settings.ConfigError("CONFIG_INVALID")，
+         不拼出"案例 None"这种半成品标题。
+    """
+    title = f"利益相关者地图 · {settings.require('project.title')}"
+    sub = (f"案例 {settings.require('project.case_id')} ｜ "
+           f"阶段 {settings.require('project.stage')} ｜ "
+           f"上图＝决策链，下图＝决定权 × 受影响程度 ｜ 每个角色的证据编号可在 "
+           f"{settings.path('ledger').name} 中逐条核对")
+    return title, sub
 
 
 # ---------------------------------------------------------------- SVG
 
 def to_svg() -> str:
+    """把定义渲染成 SVG 文本。
+
+    入参：无。
+    出参：完整 SVG 文档字符串（不含尾随换行）。
+    失败：不抛异常；调用前应先跑 validate()——几何与连线假定定义自洽。
+
+    返回字符串而非直接写文件，是为了让 harness 能把"当前定义产出的结果"
+    与磁盘上的文件逐字比对，判断图是不是上一版的残留。
+    """
+    title, sub = header_text()
     o = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" '
         f'font-family="Microsoft YaHei, PingFang SC, sans-serif">',
@@ -184,10 +245,9 @@ def to_svg() -> str:
         'markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" '
         'fill="#5C7A5C"/></marker></defs>',
         f'<text x="60" y="52" font-size="23" font-weight="700" fill="#29443B">'
-        f'利益相关者地图 · 赛事志愿者排班与交接</text>',
+        f'{esc(title)}</text>',
         f'<text x="60" y="80" font-size="13" fill="#5C7A5C">'
-        f'案例 dlg-sports-volunteers ｜ 阶段 1/9 ｜ 上图＝决策链，下图＝决定权 × 受影响程度 ｜ '
-        f'每个角色的证据编号可在 调研记录.json 中逐条核对</text>',
+        f'{esc(sub)}</text>',
     ]
 
     # 决策链
@@ -279,6 +339,12 @@ def to_svg() -> str:
 # ---------------------------------------------------------------- Mermaid
 
 def to_mmd() -> str:
+    """把定义渲染成 Mermaid 文本。
+
+    入参：无。
+    出参：flowchart 源码，结尾带一个换行；GitHub 可直接渲染。
+    失败：不抛异常；调用前应跑 validate()。
+    """
     o = ["flowchart TD",
          '  subgraph chain["决策链：从发起到对外报数"]',
          "    direction LR"]
@@ -310,10 +376,28 @@ def to_mmd() -> str:
 # ---------------------------------------------------------------- PNG
 
 def to_png(path: Path) -> None:
+    """把定义渲染成 PNG 文件。
+
+    入参：path 为输出路径（目录须已存在）。
+    出参：无，副作用是写文件。
+    失败：没装 Pillow 抛 ModuleNotFoundError；config.yaml 的字体候选全不存在
+         抛 settings.ConfigError("FONT_MISSING")；写入错误原样抛出。
+         都不吞——PNG 是要贴进汇报材料的最终产物，静默失败等于交旧图。
+    """
     from PIL import Image, ImageDraw, ImageFont
 
+    # 字体路径来自配置：Windows 是 msyh，Linux CI 是 Noto，写死任一个
+    # 都会在另一台机器上把中文画成方块，而所有自动校验都发现不了。
+    font_path = str(settings.font_path())
+
     def F(size: int, bold: bool = False):
-        return ImageFont.truetype(FONT_PATH, size)
+        """按字号取字体对象。
+
+        入参：size 像素字号；bold 预留参数（当前字体文件已含粗体，暂不使用）。
+        出参：PIL 字体对象。
+        失败：字体文件在取用后被删除时抛 OSError。
+        """
+        return ImageFont.truetype(font_path, size)
 
     f_h1, f_sub = F(23), F(13)
     f_step, f_who, f_what = F(11), F(15), F(11)
@@ -325,10 +409,9 @@ def to_png(path: Path) -> None:
     img = Image.new("RGB", (W, H), "#FFFDF5")
     d = ImageDraw.Draw(img)
 
-    d.text((60, 34), "利益相关者地图 · 赛事志愿者排班与交接", font=f_h1, fill="#29443B")
-    d.text((60, 70), "案例 dlg-sports-volunteers ｜ 阶段 1/9 ｜ 上图＝决策链，下图＝决定权 × 受影响程度 ｜ "
-                     "每个角色的证据编号可在 调研记录.json 中逐条核对",
-           font=f_sub, fill="#5C7A5C")
+    title, sub = header_text()
+    d.text((60, 34), title, font=f_h1, fill="#29443B")
+    d.text((60, 70), sub, font=f_sub, fill="#5C7A5C")
 
     # 决策链
     for i, (no, step, who, what) in enumerate(CHAIN):
@@ -413,29 +496,90 @@ def to_png(path: Path) -> None:
     img.save(path)
 
 
-def main(argv: list[str]) -> int:
-    ap = argparse.ArgumentParser(description="渲染利益相关者地图")
-    ap.add_argument("--check", action="store_true", help="只校验，不写文件")
-    args = ap.parse_args(argv)
+def render(check_only: bool = False) -> dict[str, Any]:
+    """校验定义并按需生成三种格式，返回统一结构。
 
+    入参：check_only=True 时只校验、不写文件。
+    出参：{"ok","data","error"}。成功时 data 含角色/决策链/象限数与文件路径；
+         定义不合法时 ok=False、code=VALIDATION_FAILED，data 里带 errors。
+    失败：Pillow 缺失报 DEPENDENCY_MISSING、字体缺失报 FONT_MISSING，
+         均转成失败响应，不让 traceback 冒到使用者面前。
+    """
     errs = validate()
     if errs:
-        for e in errs:
-            print("ERROR:", e)
-        return 1
-    formal = sum(1 for r in ROLES if r.veto_style == "formal")
-    print(f"校验通过：{len(ROLES)} 个角色（正式否决 {formal} / 软否决 {len(ROLES)-formal}）、"
-          f"{len(CHAIN)} 段决策链、{len(QUADRANTS)} 个象限；证据编号全部命中台账")
-    if args.check:
-        print("（单点自检：只管本图定义，交付判定请跑 python src/harness.py）")
-        return 0
+        # 不在这里 print：--json 模式下多余输出会污染 stdout，错误明细放 data.errors
+        return envelope.fail("VALIDATION_FAILED", f"{len(errs)} 处定义问题",
+                             data={"errors": errs})
 
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
-    (OUT_DIR / "利益相关者地图.svg").write_text(to_svg(), encoding="utf-8")
-    (OUT_DIR / "利益相关者地图.mmd").write_text(to_mmd(), encoding="utf-8")
-    to_png(OUT_DIR / "利益相关者地图.png")
-    print(f"已生成：{OUT_DIR / '利益相关者地图.svg'} / .png / .mmd")
-    return 0
+    base, svg_p, png_p, mmd_p = settings.figure("stakeholders")
+    formal = sum(1 for r in ROLES if r.veto_style == "formal")
+    data: dict[str, Any] = {
+        "figure": base,
+        "roles": len(ROLES),
+        "formal_veto": formal,
+        "informal_veto": len(ROLES) - formal,
+        "chain": len(CHAIN),
+        "quadrants": len(QUADRANTS),
+        "files": [],
+        "check_only": check_only,
+    }
+    if check_only:
+        return envelope.ok(data)
+
+    svg_p.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        svg_p.write_text(to_svg(), encoding="utf-8")
+        mmd_p.write_text(to_mmd(), encoding="utf-8")
+        to_png(png_p)
+    except ModuleNotFoundError as exc:
+        return envelope.fail(
+            "DEPENDENCY_MISSING",
+            f"生成 PNG 需要 Pillow：pip install Pillow（原始错误：{exc}）",
+            data=data,
+        )
+
+    data["files"] = [str(svg_p), str(png_p), str(mmd_p)]
+    return envelope.ok(data)
+
+
+def main(argv: list[str]) -> int:
+    """命令行入口。
+
+    入参：argv 为去掉程序名后的参数。
+    出参：进程退出码（0 成功 / 1 定义不合格 / 2 环境问题）。
+    失败：配置与依赖问题不抛异常，转成统一结构输出。
+    """
+    ap = argparse.ArgumentParser(description="渲染利益相关者地图")
+    ap.add_argument("--check", action="store_true", help="只校验，不写文件")
+    ap.add_argument("--json", action="store_true", help="输出统一结构 JSON")
+    args = ap.parse_args(argv)
+
+    try:
+        resp = render(check_only=args.check)
+    except settings.ConfigError as exc:
+        resp = envelope.from_exception(exc)
+
+    if resp["ok"]:
+        d = resp["data"]
+        lines = [
+            f"校验通过：{d['roles']} 个角色（正式否决 {d['formal_veto']} / "
+            f"软否决 {d['informal_veto']}）、{d['chain']} 段决策链、"
+            f"{d['quadrants']} 个象限；证据编号全部命中台账"
+        ]
+        if d["check_only"]:
+            lines.append("（单点自检：只管本图定义，交付判定请跑 python src/harness.py）")
+        else:
+            lines.append(f"已生成：{d['files'][0]} / .png / .mmd")
+        text = "\n".join(lines)
+    elif resp["error"]["code"] == "VALIDATION_FAILED":
+        errs = (resp.get("data") or {}).get("errors", [])
+        text = "\n".join([f"校验未通过：{resp['error']['msg']}"]
+                         + [f"  · {e}" for e in errs])
+    else:
+        text = resp["error"]["msg"]
+
+    envelope.emit(resp, as_json=args.json, text=text)
+    return envelope.exit_code(resp)
 
 
 if __name__ == "__main__":
