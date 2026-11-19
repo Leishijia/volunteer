@@ -20,6 +20,9 @@ paths:
   ledger: docs/调研记录.json
   ledger_csv: docs/调研记录.csv
   report: docs/校验报告.md
+  # 评审看板的输出目录。必须入库：部署取的就是这个目录，
+  # 而 harness 的 L6 靠它判断"线上那份是不是当前数据的产物"。
+  site: site
 
 ledger:
   # 台账的枚举与列顺序。列顺序同时决定 CSV 的列顺序，

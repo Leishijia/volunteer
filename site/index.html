@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>赛事志愿者排班与交接 · 阶段 1 评审看板</title>
+<meta name="description" content="上海东浩兰生赛事管理有限公司 赛事志愿者排班与交接：阶段 1 业务挖掘的结论、六个断点与 36 条可核对证据。">
+<style>
+:root{
+  --paper:#FAF7EE; --card:#FFFFFF; --ink:#1F2B26; --ink2:#4A5A52; --ink3:#7B8A80;
+  --line:#E4E7DB; --green:#2F5D4A; --green-soft:#EAF0E9; --clay:#A6553A;
+  --clay-soft:#F8EEE8; --sand:#F3EFE2;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:"Microsoft YaHei","PingFang SC","Noto Sans CJK SC","Source Han Sans SC",system-ui,sans-serif;
+  font-size:15px; line-height:1.75; -webkit-font-smoothing:antialiased;
+}
+a{color:var(--green); text-decoration:none; border-bottom:1px solid rgba(47,93,74,.3)}
+a:hover{border-bottom-color:var(--green)}
+.wrap{max-width:1120px; margin:0 auto; padding:0 28px}
+header.top{
+  position:sticky; top:0; z-index:20; background:rgba(250,247,238,.94);
+  border-bottom:1px solid var(--line); backdrop-filter:blur(6px);
+}
+.top-in{display:flex; align-items:center; gap:18px; height:56px}
+.brand{font-weight:700; font-size:14px; letter-spacing:.02em}
+.brand span{color:var(--ink3); font-weight:400; margin-left:8px}
+nav{display:flex; gap:4px; margin-left:auto; flex-wrap:wrap}
+nav a{
+  border:0; padding:6px 10px; border-radius:6px; font-size:13.5px; color:var(--ink2);
+}
+nav a:hover{background:var(--green-soft); color:var(--green)}
+
+.hero{padding:64px 0 40px}
+.eyebrow{
+  display:inline-block; font-size:12px; letter-spacing:.12em; color:var(--clay);
+  background:var(--clay-soft); padding:4px 10px; border-radius:999px;
+}
+h1{font-size:34px; line-height:1.35; margin:18px 0 10px; letter-spacing:-.01em}
+.org{color:var(--ink3); font-size:14px}
+.verdict{
+  font-size:22px; line-height:1.7; margin:28px 0 0; max-width:820px;
+  padding-left:20px; border-left:3px solid var(--green);
+}
+.verdict b{color:var(--green); font-weight:700}
+
+.points{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:32px}
+.point{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:18px 20px}
+.point h3{margin:0 0 6px; font-size:15px; color:var(--green)}
+.point p{margin:0; font-size:13.5px; color:var(--ink2); line-height:1.7}
+
+.stats{display:grid; grid-template-columns:repeat(4,1fr); gap:0; margin:36px 0 0;
+       border-top:1px solid var(--line); border-bottom:1px solid var(--line)}
+.stat{padding:20px 0}
+.stat + .stat{border-left:1px solid var(--line); padding-left:24px}
+.stat b{display:block; font-size:30px; font-weight:700; letter-spacing:-.02em; color:var(--green)}
+.stat span{font-size:12.5px; color:var(--ink3)}
+
+section{padding:56px 0; border-top:1px solid var(--line)}
+h2{font-size:13px; letter-spacing:.14em; color:var(--ink3); margin:0 0 8px; font-weight:600}
+h2 em{font-style:normal; color:var(--clay); margin-right:8px}
+.lede{font-size:20px; margin:0 0 28px; max-width:760px; line-height:1.65}
+
+.timeline{list-style:none; margin:0; padding:0; display:grid; gap:0}
+.timeline li{display:grid; grid-template-columns:112px 1fr; gap:20px; padding:16px 0;
+             border-top:1px dashed var(--line)}
+.timeline li:first-child{border-top:0}
+.timeline .t{font-variant-numeric:tabular-nums; font-weight:700; color:var(--clay); font-size:13.5px}
+.timeline .d b{display:block; font-size:15px}
+.timeline .d span{color:var(--ink2); font-size:13.5px}
+
+.breaks{display:grid; grid-template-columns:repeat(2,1fr); gap:14px}
+.break{
+  background:var(--card); border:1px solid var(--line); border-radius:10px;
+  padding:20px 22px; cursor:pointer; transition:border-color .15s, transform .15s;
+  text-align:left; font:inherit; color:inherit;
+}
+.break:hover{border-color:var(--clay); transform:translateY(-1px)}
+.break .bid{font-size:12px; font-weight:700; color:var(--clay); letter-spacing:.06em}
+.break h3{margin:4px 0 8px; font-size:16.5px}
+.break .where{font-size:12.5px; color:var(--ink3); margin:0 0 8px}
+.break .effect{margin:0; font-size:13.5px; color:var(--ink2)}
+.break .cnt{margin-top:12px; font-size:12px; color:var(--green); background:var(--green-soft);
+            display:inline-block; padding:2px 9px; border-radius:999px}
+
+.controls{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:18px}
+.chip{
+  border:1px solid var(--line); background:var(--card); color:var(--ink2);
+  padding:6px 13px; border-radius:999px; font-size:13px; cursor:pointer; font:inherit;
+  font-size:13px; transition:.15s;
+}
+.chip:hover{border-color:var(--green); color:var(--green)}
+.chip[aria-pressed="true"]{background:var(--green); border-color:var(--green); color:#fff}
+input[type="search"],select{
+  font:inherit; font-size:13.5px; padding:7px 12px; border:1px solid var(--line);
+  border-radius:8px; background:var(--card); color:var(--ink); outline:none;
+}
+input[type="search"]{flex:1; min-width:180px}
+input[type="search"]:focus,select:focus{border-color:var(--green)}
+.count{font-size:13px; color:var(--ink3); margin-left:auto}
+
+.tbl-wrap{background:var(--card); border:1px solid var(--line); border-radius:10px; overflow:hidden}
+table{width:100%; border-collapse:collapse; font-size:13.5px; table-layout:fixed}
+th.c-id{width:9%} th.c-who{width:12%} th.c-stmt{width:44%}
+th.c-type{width:9%} th.c-brk{width:13%} th.c-cross{width:13%}
+thead th{
+  text-align:left; font-size:11.5px; letter-spacing:.08em; color:var(--ink3);
+  font-weight:600; padding:12px 14px; border-bottom:1px solid var(--line);
+  background:var(--sand); white-space:nowrap;
+}
+tbody td{padding:11px 14px; border-bottom:1px solid var(--line); vertical-align:top}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:#FCFDFA}
+.id-cell{font-family:ui-monospace,Consolas,monospace; font-size:12px; color:var(--ink3); white-space:nowrap}
+.stmt{color:var(--ink)}
+.stmt details{margin-top:6px}
+.stmt summary{
+  cursor:pointer; font-size:12.5px; color:var(--green); list-style:none; display:inline-block;
+}
+.stmt summary::-webkit-details-marker{display:none}
+.stmt summary::before{content:"＋ "; font-weight:700}
+.stmt details[open] summary::before{content:"－ "}
+.stmt blockquote{
+  margin:8px 0 0; padding:10px 14px; background:var(--paper); border-left:2px solid var(--clay);
+  color:var(--ink2); font-size:13px; border-radius:0 6px 6px 0;
+}
+.tag{display:inline-block; font-size:11.5px; padding:2px 8px; border-radius:5px;
+     max-width:100%; overflow-wrap:anywhere}
+.tag.fact{background:var(--green-soft); color:var(--green)}
+.tag.judge{background:#EEF2F7; color:#3E5A78}
+.tag.todo{background:var(--clay-soft); color:var(--clay)}
+.tag.b{background:var(--clay-soft); color:var(--clay); font-weight:600; margin:0 4px 3px 0}
+.tag.single{background:#F5F1E6; color:#8A6B2F}
+.tag.crossed{background:var(--green-soft); color:var(--green)}
+.who small{display:block; color:var(--ink3); font-size:11.5px}
+.empty{padding:40px; text-align:center; color:var(--ink3); font-size:14px}
+
+.figs{display:grid; gap:22px}
+.fig{background:var(--card); border:1px solid var(--line); border-radius:10px; overflow:hidden}
+.fig a{display:block; border:0; background:#FFFDF5}
+.fig img{display:block; width:100%; height:auto}
+.fig .cap{padding:12px 18px; font-size:13px; color:var(--ink2); border-top:1px solid var(--line);
+          display:flex; gap:10px; align-items:baseline}
+.fig .cap b{color:var(--ink)}
+
+.levels{display:grid; gap:0; border-top:1px solid var(--line)}
+.level{display:grid; grid-template-columns:64px 110px 1fr; gap:16px; padding:12px 0;
+       border-bottom:1px solid var(--line); align-items:baseline}
+.level .lv{font-family:ui-monospace,Consolas,monospace; font-weight:700; color:var(--green)}
+.level .nm{font-size:13.5px; color:var(--ink)}
+.level .ds{font-size:13px; color:var(--ink2)}
+.level.ceiling{background:var(--green-soft); margin:0 -14px; padding:12px 14px}
+
+.donts{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:22px}
+.dont{background:var(--card); border:1px solid var(--line); border-left:3px solid var(--clay);
+      border-radius:0 8px 8px 0; padding:16px 18px}
+.dont b{display:block; font-size:14px; margin-bottom:4px}
+.dont span{font-size:13px; color:var(--ink2)}
+
+footer{padding:36px 0 56px; border-top:1px solid var(--line); color:var(--ink3); font-size:12.5px}
+footer p{margin:0 0 8px}
+code{font-family:ui-monospace,Consolas,monospace; background:var(--sand); padding:1px 6px;
+     border-radius:4px; font-size:12px}
+
+@media (max-width:900px){
+  .points,.breaks,.donts{grid-template-columns:1fr}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .stat:nth-child(3){border-left:0; padding-left:0}
+  .stat:nth-child(n+3){border-top:1px solid var(--line)}
+  h1{font-size:26px} .verdict{font-size:18px}
+}
+@media (max-width:700px){
+  .wrap{padding:0 16px}
+  .top-in{height:auto; padding:8px 0; flex-wrap:wrap; gap:6px}
+  nav{margin-left:0; width:100%}
+  nav a{padding:5px 8px; font-size:12.5px}
+  .timeline li{grid-template-columns:1fr; gap:4px}
+  table,thead,tbody,tr,td{display:block; width:100%}
+  thead{display:none}
+  tbody tr{border-bottom:1px solid var(--line); padding:12px 0}
+  tbody td{border:0; padding:4px 16px}
+  tbody td::before{content:attr(data-label); display:block; font-size:10.5px;
+                   letter-spacing:.08em; color:var(--ink3); margin-bottom:2px}
+  .count{width:100%; margin-left:0}
+}
+@media print{
+  header.top,nav,.controls{display:none}
+  body{background:#fff} section{page-break-inside:avoid}
+  .break:hover{transform:none}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap top-in">
+    <div class="brand">赛事志愿者排班与交接</div>
+    <nav>
+      <a href="#verdict">结论</a><a href="#breaks">断点</a><a href="#figures">图</a><a href="#ledger">台账</a><a href="#limits">边界</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<div class="wrap hero" id="verdict">
+  <span class="eyebrow">阶段 1/9 · 业务挖掘 · 合成训练资料</span>
+  <h1>赛事志愿者排班与交接</h1>
+  <div class="org">上海东浩兰生赛事管理有限公司 ｜ 案例 dlg-sports-volunteers</div>
+  <p class="verdict">问题不在「排班排不出来」，在<b>交接那一刻没有唯一口径，也没有留下谁确认过的证据。</b></p>
+  <div class="points"><div class="point"><h3>值得立项</h3><p>但要把它定义成「交接时刻的口径统一与留证」，不是「做个排班工具」。只做签到，重复核对会从三处变四处。</p></div><div class="point"><h3>范围划死</h3><p>只读核对 + 人工交接。不碰派班算法，不碰对外验收口径的最终决定权。</p></div><div class="point"><h3>试点收窄</h3><p>1 场赛事、2 个站点（一主一对照）、1 个交接窗口。样本不够就先别谈收益。</p></div></div>
+  <div class="stats">
+    <div class="stat"><b>36</b><span>条调查事实</span></div>
+    <div class="stat"><b>6</b><span>位访谈对象 · 每位 6 条</span></div>
+    <div class="stat"><b>6</b><span>个流程断点</span></div>
+    <div class="stat"><b>25</b><span>条已交叉核对</span></div>
+  </div>
+</div>
+
+
+<section id="timeline"><div class="wrap">
+  <h2><em>01</em>触发事件</h2>
+  <p class="lede">2026-10-18 07:20 的一次交接，40 分钟后现场已经无法自证。</p>
+  <ol class="timeline"><li><div class="t">07:20</div><div class="d"><b>第 1→2 班交接</b><span>2 人迟到、1 人临时替换未落单据。</span></div></li><li><div class="t">07:35</div><div class="d"><b>三处对不上</b><span>3 个岗位与排班表 v3 不一致；现场、赛务、台账各持一版。</span></div></li><li><div class="t">08:15</div><div class="d"><b>往返核对</b><span>现场协调员在两个站点间跑了 40 分钟，靠群里问人。</span></div></li><li><div class="t">赛后 2 天</div><div class="d"><b>回填台账</b><span>靠照片与记忆补录，本应 48 小时内完成。</span></div></li></ol>
+</div></section>
+
+
+<section id="breaks"><div class="wrap">
+  <h2><em>02</em>六个断点</h2>
+  <p class="lede">问题不在某一个环节，在六处断点串成了一条链：每一处都靠人去补，补完没有留下痕迹。</p>
+  <div class="breaks">
+<button class="break" data-bid="B1" type="button">
+  <div class="bid">B1</div>
+  <h3>排班多版本并存</h3>
+  <p class="where">赛前 T-7 至 T-1 · 排班发布与变更</p>
+  <p class="effect">现场、赛务、台账各持一版，口头对齐</p>
+  <div class="cnt">4 条证据 · 点击筛查</div>
+</button>
+<button class="break" data-bid="B2" type="button">
+  <div class="bid">B2</div>
+  <h3>交接确认无签字、无时间戳</h3>
+  <p class="where">班次交接窗口</p>
+  <p class="effect">责任转移点悬空，审计不认群聊截图</p>
+  <div class="cnt">11 条证据 · 点击筛查</div>
+</button>
+<button class="break" data-bid="B3" type="button">
+  <div class="bid">B3</div>
+  <h3>临时换人不回填、异常无升级时限</h3>
+  <p class="where">赛事当日 · 异常处理</p>
+  <p class="effect">岗位空窗、靠人跑回去核</p>
+  <div class="cnt">7 条证据 · 点击筛查</div>
+</button>
+<button class="break" data-bid="B4" type="button">
+  <div class="bid">B4</div>
+  <h3>同一事实三处重复录入</h3>
+  <p class="where">签到／交接单／赛后台账</p>
+  <p class="effect">重复核对、口径互相打脸</p>
+  <div class="cnt">7 条证据 · 点击筛查</div>
+</button>
+<button class="break" data-bid="B5" type="button">
+  <div class="bid">B5</div>
+  <h3>台账靠照片与记忆回填</h3>
+  <p class="where">赛后 48 小时内</p>
+  <p class="effect">约 16 人时/场返工，本次事件拖到 2 天</p>
+  <div class="cnt">3 条证据 · 点击筛查</div>
+</button>
+<button class="break" data-bid="B6" type="button">
+  <div class="bid">B6</div>
+  <h3>对外口径未书面化</h3>
+  <p class="where">赛后对外报数</p>
+  <p class="effect">每次现问，一次约半小时</p>
+  <div class="cnt">7 条证据 · 点击筛查</div>
+</button></div>
+</div></section>
+
+
+<section id="figures"><div class="wrap">
+  <h2><em>03</em>两张图</h2>
+  <p class="lede">图由代码生成，数据一改图就重画——不存在"文档和图各说一套"。</p>
+  <div class="figs"><div class="fig"><a href="assets/flow.svg" target="_blank" rel="noopener"><img src="assets/flow.svg" alt="现状流程图" loading="lazy"></a><div class="cap"><b>现状流程图</b><span>五泳道 AS-IS：赛前排班 → 交接 → 异常 → 赛后回填，断点挂在具体节点上。</span></div></div><div class="fig"><a href="assets/stakeholders.svg" target="_blank" rel="noopener"><img src="assets/stakeholders.svg" alt="利益相关者地图" loading="lazy"></a><div class="cap"><b>利益相关者地图</b><span>上图＝决策链，下图＝决定权 × 受影响程度。六位访谈对象全部在图上。</span></div></div></div>
+</div></section>
+
+
+<section id="ledger"><div class="wrap">
+  <h2><em>04</em>调研台账</h2>
+  <p class="lede">36 条调查事实，每条都能展开看原话。标注「单源」的
+  11 条没有第二个角色确认过，不作为结论依据。</p>
+  <div class="controls">
+    <button class="chip" type="button" data-who="顾明岚" aria-pressed="false">顾明岚 · 业务负责人</button><button class="chip" type="button" data-who="林亦舟" aria-pressed="false">林亦舟 · 赛事现场协调员</button><button class="chip" type="button" data-who="唐映秋" aria-pressed="false">唐映秋 · 项目流程协调员</button><button class="chip" type="button" data-who="秦芮" aria-pressed="false">秦芮 · 数字化工程师</button><button class="chip" type="button" data-who="傅景" aria-pressed="false">傅景 · 审核与质量负责人</button><button class="chip" type="button" data-who="叶书" aria-pressed="false">叶书 · 客户协同代表</button>
+    <select id="typeFilter" aria-label="按证据性质筛选">
+      <option value="">全部性质</option><option value="事实陈述">事实陈述</option><option value="判断">判断</option><option value="待核">待核</option>
+    </select>
+    <select id="breakFilter" aria-label="按断点筛选">
+      <option value="">全部断点</option><option value="B1">B1</option><option value="B2">B2</option><option value="B3">B3</option><option value="B4">B4</option><option value="B5">B5</option><option value="B6">B6</option>
+    </select>
+    <input id="q" type="search" placeholder="搜索编号、人名、关键词…" aria-label="搜索台账">
+    <span class="count" id="shownCount">显示 36 / 36 条</span>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>
+        <th class="c-id">编号</th><th class="c-who">访谈对象</th>
+        <th class="c-stmt">主题 / 陈述</th><th class="c-type">性质</th>
+        <th class="c-brk">断点</th><th class="c-cross">交叉核对</th>
+      </tr></thead>
+      <tbody id="ledgerBody">
+<tr data-who="顾明岚" data-type="判断"
+    data-breaks="B2" data-search="INT-01-01 顾明岚 业务负责人 业务目标 目标不是排班工具，而是交接时可核对、事后可追溯（两个结果，不是一件事） 我不缺一个排班工具。我缺的是出事的时候，能说清楚谁在哪儿、谁确认过。 判断 B2">
+  <td data-label="编号" class="id-cell">INT-01-01</td>
+  <td data-label="访谈对象" class="who">顾明岚<small>业务负责人</small></td>
+  <td data-label="主题 / 陈述" class="stmt"><b>业务目标</b>
+    <div>目标不是排班工具，而是交接时可核对、事后可追溯（两个结果，不是一件事）</div><details><summary>原话</summary><blockquote>我不缺一个排班工具。我缺的是出事的时候，能说清楚谁在哪儿、谁确认过。</blockquote></details></td>
+  <td data-label="性质"><span class="tag judge">判断</span></td>
+  <td data-label="断点"><span class="tag b">B2</span></td>
+  <td data-label="交叉核对"><span class="tag single">单源</span></td>
+</tr>
+<tr data-who="顾明岚" data-type="事实陈述"
+    data-breaks="B1" data-search="INT-01-02 顾明岚 业务负责人 现行流程 排班由赛务出，现场按站拆，改版靠群里通知 排班是赛务排的，现场按站拆。中间改过几版，改完在群里说一声。 事实陈述 B1">
+  <td data-label="编号" class="id-cell">INT-01-02</td>
+  <td data-label="访谈对象" class="who">顾明岚<small>业务负责人</small></td>
+  <td data-label="主题 / 陈述" class="stmt"><b>现行流程</b>
+    <div>排班由赛务出，现场按站拆，改版靠群里通知</div><details><summary>原话</summary><blockquote>排班是赛务排的，现场按站拆。中间改过几版，改完在群里说一声。</blockquote></details></td>
+  <td data-label="性质"><span class="tag fact">事实陈述</span></td>
+  <td data-label="断点"><span class="tag b">B1</span></td>
+  <td data-label="交叉核对"><span class="tag crossed">已交叉（INT-03-01 / INT-04-04）</span></td>
+</tr>
+<tr data-who="顾明岚" data-type="判断"
+    data-breaks="B2 B4" data-search="INT-01-03 顾明岚 业务负责人 验收标准 交接 5 分钟内核完；赛后无需二次回填 交接的时候不用来回问，站在那儿五分钟能核完；赛后不用再补一遍。 判断 B2 B4">
+  <td data-label="编号" class="id-cell">INT-01-03</td>
+  <td data-label="访谈对象" class="who">顾明岚<small>业务负责人</small></td>
+  <td data-label="主题 / 陈述" class="stmt"><b>验收标准</b>
+    <div>交接 5 分钟内核完；赛后无需二次回填</div><details><summary>原话</summary><blockquote>交接的时候不用来回问，站在那儿五分钟能核完；赛后不用再补一遍。</blockquote></details></td>
+  <td data-label="性质"><span class="tag judge">判断</span></td>
+  <td data-label="断点"><span class="tag b">B2</span><span class="tag b">B4</span></td>
+  <td data-label="交叉核对"><span class="tag crossed">与 INT-05-03 口径一致</span></td>
+</tr>
+<tr data-who="顾明岚" data-type="判断"
+    data-breaks="B5" data-search="INT-01-04 顾明岚 业务负责人 预算与成本核算 预算未定，先要求核算返工人时再谈投入 先别谈钱。你把返工的工时算清楚，我拿这个数去谈。 判断 B5">
+  <td data-label="编号" class="id-cell">INT-01-04</td>
+  <td data-label="访谈对象" class="who">顾明岚<small>业务负责人</small></td>
+  <td data-label="主题 / 陈述" class="stmt"><b>预算与成本核算</b>
+    <div>预算未定，先要求核算返工人时再谈投入</div><details><summary>原话</summary><blockquote>先别谈钱。你把返工的工时算清楚，我拿这个数去谈。</blockquote></details></td>
+  <td data-label="性质"><span class="tag judge">判断</span></td>
+  <td data-label="断点"><span class="tag b">B5</span></td>
+  <td data-label="交叉核对"><span class="tag single">单源</span></td>
+</tr>
+<tr data-who="顾明岚" data-type="事实陈述"
+    data-breaks="" data-search="INT-01-05 顾明岚 业务负责人 决定权 范围由顾明岚定；红线（傅景）、客户口径（叶书）、读写权限（秦芮）是否决点 我定范围。傅景那边红线过不去就过不去，客户口径得叶书点头，系统能不能读要问秦芮。 事实陈述 ">
+  <td data-label="编号" class="id-cell">INT-01-05</td>
+  <td data-label="访谈对象" class="who">顾明岚<small>业务负责人</small></td>
+  <td data-label="主题 / 陈述" class="stmt"><b>决定权</b>
+    <div>范围由顾明岚定；红线（傅景）、客户口径（叶书）、读写权限（秦芮）是否决点</div><details><summary>原话</summary><blockquote>我定范围。傅景那边红线过不去就过不去，客户口径得叶书点头，系统能不能读要问秦芮。</blockquote></details></td>
+  <td data-label="性质"><span class="tag fact">事实陈述</span></td>
+  <td data-label="断点">—</td>
+  <td data-label="交叉核对"><span class="tag crossed">与 case-ROLE 一致</span></td>
+</tr>
+<tr data-who="顾明岚" data-type="判断"
+    data-breaks="" data-search="INT-01-06 顾明岚 业务负责人 出资与投入口径 投入不单独立项，从赛事运营改善预算列支；要的是本季能落地的一段，不是整体系统 钱从赛事运营的改善预算里出，不单独立项。所以我要的不是一个大系统，是这一季就能落地的一段。 判断 ">
+  <td data-label="编号" class="id-cell">INT-01-06</td>
+  <td data-label="访谈对象" class="who">顾明岚<small>业务负责人</small></td>
+  <td data-label="主题 / 陈述" class="stmt"><b>出资与投入口径</b>
+    <div>投入不单独立项，从赛事运营改善预算列支；要的是本季能落地的一段，不是整体系统</div><details><summary>原话</summary><blockquote>钱从赛事运营的改善预算里出，不单独立项。所以我要的不是一个大系统，是这一季就能落地的一段。</blockquote></details></td>
+  <td data-label="性质"><span class="tag judge">判断</span></td>
+  <td data-label="断点">—</td>
+  <td data-label="交叉核对"><span class="tag crossed">与 INT-01-04 一致（先算返工人时，再谈投入）</span></td>
+</tr>
+<tr data-who="林亦舟" data-type="判断"
+    data-breaks="B3" data-search="INT-02-01 林亦舟 赛事现场协调员 现场动作性质 现场先点名，发现人不齐才被动对账；没有主动核对环节 现场没有'对账'这回事，只有'点名'。点完名发现人不齐，才开始对账。 判断 B3">
+  <td data-label="编号" class="id-cell">INT-02-01</td>
+  <td data-label="访谈对象" class="who">林亦舟<small>赛事现场协调员</small></td>
+  <td data-label="主题 / 陈述" class="stmt"><b>现场动作性质</b>
+    <div>现场先点名，发现人不齐才被动对账；没有主动核对环节</div><details><summary>原话</summary><blockquote>现场没有'对账'这回事，只有'点名'。点完名发现人不齐，才开始对账。</blockquote></details></td>
+  <td data-label="性质"><span class="tag judge">判断</span></td>
+  <td data-label="断点"><span class="tag b">B3</span></td>
+  <td data-label="交叉核对"><span class="tag single">单源</span></td>
+</tr>
+<tr data-who="林亦舟" data-type="事实陈述"
+    data-breaks="B2 B3" data-search="INT-02-02 林亦舟 赛事现场协调员 触发事件 10-18 07:20 第 1→2 班交接：2 人迟到约 18 分钟，1 人临时替换仅群内口头通知 十月十八号早上七点二十，第一班交第二班。两个迟到了十几分钟，还有一个临时换了人，群里说了一句就算通知了。 事实陈述 B2 B3">
+  <td data-label="编号" class="id-cell">INT-02-02</td>
+  <td data-label="访谈对象" class="who">林亦舟<small>赛事现场协调员</small></td>
+  <td data-label="主题 / 陈述" class="stmt"><b>触发事件</b>
+    <div>10-18 07:20 第 1→2 班交接：2 人迟到约 18 分钟，1 人临时替换仅群内口头通知</div><details><summary>原话</summary><blockquote>十月十八号早上七点二十，第一班交第二班。两个迟到了十几分钟，还有一个临时换了人，群里说了一句就算通知了。</blockquote></details></td>
+  <td data-label="性质"><span class="tag fact">事实陈述</span></td>
+  <td data-label="断点"><span class="tag b">B2</span><span class="tag b">B3</span></td>
+  <td data-label="交叉核对"><span class="tag single">单源</span></td>
+</tr>
+<tr data-who="林亦舟" data-type="事实陈述"
+    data-breaks="B3" data-search="INT-02-03 林亦舟 赛事现场协调员 异常处置成本 从 2 号站返回 4 号站现场核点，约 40 分钟；期间 3 个岗位无固定值守 我从二号站走回四号站，现场点了一遍，来回四十分钟。那四十分钟里，那三个岗位没人固定守着。 事实陈述 B3">
+  <td data-label="编号" class="id-cell">INT-02-03</td>
+  <td data-label="访谈对象" class="who">林亦舟<small>赛事现场协调员</small></td>
+  <td data-label="主题 / 陈述" class="stmt"><b>异常处置成本</b>
+    <div>从 2 号站返回 4 号站现场核点，约 40 分钟；期间 3 个岗位无固定值守</div><details><summary>原话</summary><blockquote>我从二号站走回四号站，现场点了一遍，来回四十分钟。那四十分钟里，那三个岗位没人固定守着。</blockquote></details></td>
+  <td data-label="性质"><span class="tag fact">事实陈述</span></td>
+  <td data-label="断点"><span class="tag b">B3</span></td>
+  <td data-label="交叉核对"><span class="tag crossed">已交叉（INT-06-03 客户侧来电）</span></td>
+</tr>
+<tr data-who="林亦舟" data-type="待核"
+    data-breaks="B2" data-search="INT-02-04 林亦舟 赛事现场协调员 交接时长分布 交接耗时无统计：快的 1–2 分钟，慢的十来分钟；一场 12 次交接 没统计。一场十二次交接，快的一两分钟，慢的十来分钟。谁去记这个。 待核 B2">
+  <td data-label="编号" class="id-cell">INT-02-04</td>
+  <td data-label="访谈对象" class="who">林亦舟<small>赛事现场协调员</small></td>
+  <td data-label="主题 / 陈述" class="stmt"><b>交接时长分布</b>
+    <div>交接耗时无统计：快的 1–2 分钟，慢的十来分钟；一场 12 次交接</div><details><summary>原话</summary><blockquote>没统计。一场十二次交接，快的一两分钟，慢的十来分钟。谁去记这个。</blockquote></details></td>
+  <td data-label="性质"><span class="tag todo">待核</span></td>
+  <td data-label="断点"><span class="tag b">B2</span></td>
+  <td data-label="交叉核对"><span class="tag single">单源</span></td>
+</tr>
+<tr data-who="林亦舟" data-type="事实陈述"
+    data-breaks="B6" data-search="INT-02-05 林亦舟 赛事现场协调员 现场条件限制 手套、风、信号仅一格；扫码常需试三次；主要靠对讲机 手在兜里，戴手套，风大。对讲机是主力，手机得掏出来解锁、找群、翻记录。 事实陈述 B6">
+  <td data-label="编号" class="id-cell">INT-02-05</td>
+  <td data-label="访谈对象" class="who">林亦舟<small>赛事现场协调员</small></td>
+  <td data-label="主题 / 陈述" class="stmt"><b>现场条件限制</b>
+    <div>手套、风、信号仅一格；扫码常需试三次；主要靠对讲机</div><details><summary>原话</summary><blockquote>手在兜里，戴手套，风大。对讲机是主力，手机得掏出来解锁、找群、翻记录。</blockquote></details></td>
+  <td data-label="性质"><span class="tag fact">事实陈述</span></td>
+  <td data-label="断点"><span class="tag b">B6</span></td>
+  <td data-label="交叉核对"><span class="tag crossed">已交叉（INT-04-05 扫码失败退纸质）</span></td>
+</tr>
+<tr data-who="林亦舟" data-type="事实陈述"
+    data-breaks="B2 B4" data-search="INT-02-06 林亦舟 赛事现场协调员 绕行做法 一线自建微信群“接班确认”，截图即事实台账 我们自己在群里发'接班确认'，谁接了谁回一个。这就是我们的台账。 事实陈述 B2 B4">
+  <td data-label="编号" class="id-cell">INT-02-06</td>
+  <td data-label="访谈对象" class="who">林亦舟<small>赛事现场协调员</small></td>
+  <td data-label="主题 / 陈述" class="stmt"><b>绕行做法</b>
+    <div>一线自建微信群“接班确认”，截图即事实台账</div><details><summary>原话</summary><blockquote>我们自己在群里发'接班确认'，谁接了谁回一个。这就是我们的台账。</blockquote></details></td>
+  <td data-label="性质"><span class="tag fact">事实陈述</span></td>
+  <td data-label="断点"><span class="tag b">B2</span><span class="tag b">B4</span></td>
+  <td data-label="交叉核对"><span class="tag crossed">已交叉（INT-03-02 交接单已停签）</span></td>
+</tr>
+<tr data-who="唐映秋" data-type="事实陈述"
+    data-breaks="B4 B5" data-search="INT-03-01 唐映秋 项目流程协调员 端到端流程 赛前排班 Excel → T-1 封版打印分站 → 纸质签到 → 赛后 48 小时内整理台账 赛前排班出 Excel，赛前一夜封版，打印分站。现场用纸质签到。赛后四十八小时内，我把签到照片和群记录整理进台账。 事实陈述 B4 B5">
+  <td data-label="编号" class="id-cell">INT-03-01</td>
+  <td data-label="访谈对象" class="who">唐映秋<small>项目流程协调员</small></td>
+  <td data-label="主题 / 陈述" class="stmt"><b>端到端流程</b>
+    <div>赛前排班 Excel → T-1 封版打印分站 → 纸质签到 → 赛后 48 小时内整理台账</div><details><summary>原话</summary><blockquote>赛前排班出 Excel，赛前一夜封版，打印分站。现场用纸质签到。赛后四十八小时内，我把签到照片和群记录整理进台账。</blockquote></details></td>
+  <td data-label="性质"><span class="tag fact">事实陈述</span></td>
+  <td data-label="断点"><span class="tag b">B4</span><span class="tag b">B5</span></td>
+  <td data-label="交叉核对"><span class="tag crossed">已交叉（INT-04-01）</span></td>
+</tr>
+<tr data-who="唐映秋" data-type="事实陈述"
+    data-breaks="B1 B2" data-search="INT-03-02 唐映秋 项目流程协调员 材料与版本 排班表 v1/v2/v3 并存于群文件；交接单曾存在，现已停签 排班表有 v1、v2、v3，都在群里。台账是我自己做的表。交接单……原来有，后来没人签了。 事实陈述 B1 B2">
+  <td data-label="编号" class="id-cell">INT-03-02</td>
+  <td data-label="访谈对象" class="who">唐映秋<small>项目流程协调员</small></td>
+  <td data-label="主题 / 陈述" class="stmt"><b>材料与版本</b>
+    <div>排班表 v1/v2/v3 并存于群文件；交接单曾存在，现已停签</div><details><summary>原话</summary><blockquote>排班表有 v1、v2、v3，都在群里。台账是我自己做的表。交接单……原来有，后来没人签了。</blockquote></details></td>
+  <td data-label="性质"><span class="tag fact">事实陈述</span></td>
+  <td data-label="断点"><span class="tag b">B1</span><span class="tag b">B2</span></td>
+  <td data-label="交叉核对"><span class="tag crossed">已交叉（INT-02-06）</span></td>
+</tr>
+<tr data-who="唐映秋" data-type="判断"
+    data-breaks="B2" data-search="INT-03-03 唐映秋 项目流程协调员 责任转移点 按规程责任自交接单签字时转移；实际退化为口头 按规矩是交接单签字那一刻责任转移。现在没签，就变成'口头说过了'。 判断 B2">
+  <td data-label="编号" class="id-cell">INT-03-03</td>
+  <td data-label="访谈对象" class="who">唐映秋<small>项目流程协调员</small></td>
+  <td data-label="主题 / 陈述" class="stmt"><b>责任转移点</b>
+    <div>按规程责任自交接单签字时转移；实际退化为口头</div><details><summary>原话</summary><blockquote>按规矩是交接单签字那一刻责任转移。现在没签，就变成'口头说过了'。</blockquote></details></td>
+  <td data-label="性质"><span class="tag judge">判断</span></td>
+  <td data-label="断点"><span class="tag b">B2</span></td>
+  <td data-label="交叉核对"><span class="tag crossed">与 INT-05-02 一致</span></td>
+</tr>
+<tr data-who="唐映秋" data-type="事实陈述"
+    data-breaks="B1" data-search="INT-03-04 唐映秋 项目流程协调员 规则维护 规则以赛前须知为准，变更靠群公告或现场口头，无版本号 规则就是赛前发的那份须知。改了发群里，或者现场喊一声。没有版本号。 事实陈述 B1">
+  <td data-label="编号" class="id-cell">INT-03-04</td>
+  <td data-label="访谈对象" class="who">唐映秋<small>项目流程协调员</small></td>
+  <td data-label="主题 / 陈述" class="stmt"><b>规则维护</b>
+    <div>规则以赛前须知为准，变更靠群公告或现场口头，无版本号</div><details><summary>原话</summary><blockquote>规则就是赛前发的那份须知。改了发群里，或者现场喊一声。没有版本号。</blockquote></details></td>
+  <td data-label="性质"><span class="tag fact">事实陈述</span></td>
+  <td data-label="断点"><span class="tag b">B1</span></td>
+  <td data-label="交叉核对"><span class="tag crossed">已交叉（INT-01-02）</span></td>
+</tr>
+<tr data-who="唐映秋" data-type="事实陈述"
+    data-breaks="B3" data-search="INT-03-05 唐映秋 项目流程协调员 异常升级 异常无分派规则与时限，由人互相催 找不到人就找我，我再找现场。没有时限，谁急谁催。 事实陈述 B3">
+  <td data-label="编号" class="id-cell">INT-03-05</td>
+  <td data-label="访谈对象" class="who">唐映秋<small>项目流程协调员</small></td>
+  <td data-label="主题 / 陈述" class="stmt"><b>异常升级</b>
+    <div>异常无分派规则与时限，由人互相催</div><details><summary>原话</summary><blockquote>找不到人就找我，我再找现场。没有时限，谁急谁催。</blockquote></details></td>
+  <td data-label="性质"><span class="tag fact">事实陈述</span></td>
+  <td data-label="断点"><span class="tag b">B3</span></td>
+  <td data-label="交叉核对"><span class="tag crossed">与 INT-05-05 要求（需升级时限）冲突</span></td>
+</tr>
+<tr data-who="唐映秋" data-type="事实陈述"
+    data-breaks="B5" data-search="INT-03-06 唐映秋 项目流程协调员 返工人时 本次事件台账回填 2 人 × 1 天（约 16 人时） 这次两天。两个人，一人一天。人一多，照片就乱，得一张张对。 事实陈述 B5">
+  <td data-label="编号" class="id-cell">INT-03-06</td>
+  <td data-label="访谈对象" class="who">唐映秋<small>项目流程协调员</small></td>
+  <td data-label="主题 / 陈述" class="stmt"><b>返工人时</b>
+    <div>本次事件台账回填 2 人 × 1 天（约 16 人时）</div><details><summary>原话</summary><blockquote>这次两天。两个人，一人一天。人一多，照片就乱，得一张张对。</blockquote></details></td>
+  <td data-label="性质"><span class="tag fact">事实陈述</span></td>
+  <td data-label="断点"><span class="tag b">B5</span></td>
+  <td data-label="交叉核对"><span class="tag single">单源</span></td>
+</tr>
+<tr data-who="秦芮" data-type="事实陈述"
+    data-breaks="B4" data-search="INT-04-01 秦芮 数字化工程师 系统现状 四套载体并存：排班 Excel、报名平台导出、扫码签到小程序、线下台账 排班在 Excel，报名用第三方平台导出的表。签到有个扫码小程序，赛后导出 CSV。台账是线下表。 事实陈述 B4">
+  <td data-label="编号" class="id-cell">INT-04-01</td>
+  <td data-label="访谈对象" class="who">秦芮<small>数字化工程师</small></td>
+  <td data-label="主题 / 陈述" class="stmt"><b>系统现状</b>
+    <div>四套载体并存：排班 Excel、报名平台导出、扫码签到小程序、线下台账</div><details><summary>原话</summary><blockquote>排班在 Excel，报名用第三方平台导出的表。签到有个扫码小程序，赛后导出 CSV。台账是线下表。</blockquote></details></td>
+  <td data-label="性质"><span class="tag fact">事实陈述</span></td>
+  <td data-label="断点"><span class="tag b">B4</span></td>
+  <td data-label="交叉核对"><span class="tag crossed">已交叉（INT-03-01）</span></td>
+</tr>
+<tr data-who="秦芮" data-type="事实陈述"
+    data-breaks="B4 B6" data-search="INT-04-02 秦芮 数字化工程师 数据质量 姓名口径不统一（同音字、空格、有无工号），缺唯一标识导致无法对人 三套表里人名的写法不统一。同音字、加空格、带工号不带工号。没有唯一工号，对不上人。 事实陈述 B4 B6">
+  <td data-label="编号" class="id-cell">INT-04-02</td>
+  <td data-label="访谈对象" class="who">秦芮<small>数字化工程师</small></td>
+  <td data-label="主题 / 陈述" class="stmt"><b>数据质量</b>
+    <div>姓名口径不统一（同音字、空格、有无工号），缺唯一标识导致无法对人</div><details><summary>原话</summary><blockquote>三套表里人名的写法不统一。同音字、加空格、带工号不带工号。没有唯一工号，对不上人。</blockquote></details></td>
+  <td data-label="性质"><span class="tag fact">事实陈述</span></td>
+  <td data-label="断点"><span class="tag b">B4</span><span class="tag b">B6</span></td>
+  <td data-label="交叉核对"><span class="tag single">单源</span></td>
+</tr>
+<tr data-who="秦芮" data-type="事实陈述"
+    data-breaks="" data-search="INT-04-03 秦芮 数字化工程师 接口能力 报名平台与签到小程序仅支持导出，无写回接口；排班为文件 报名平台能导出，签到小程序能导出。排班表就是文件。没有写回接口。 事实陈述 ">
+  <td data-label="编号" class="id-cell">INT-04-03</td>
+  <td data-label="访谈对象" class="who">秦芮<small>数字化工程师</small></td>
+  <td data-label="主题 / 陈述" class="stmt"><b>接口能力</b>
+    <div>报名平台与签到小程序仅支持导出，无写回接口；排班为文件</div><details><summary>原话</summary><blockquote>报名平台能导出，签到小程序能导出。排班表就是文件。没有写回接口。</blockquote></details></td>
+  <td data-label="性质"><span class="tag fact">事实陈述</span></td>
+  <td data-label="断点">—</td>
+  <td data-label="交叉核对"><span class="tag crossed">支撑 case-SCOPE “只读核对”边界</span></td>
+</tr>
+<tr data-who="秦芮" data-type="判断"
+    data-breaks="B1 B3" data-search="INT-04-04 秦芮 数字化工程师 数据时效 排班 T-1 封版后不再更新，现场变更不入系统，名单自封版起持续过期 排班赛前一夜封版。现场变更不进系统，只在群里。所以系统里的名单，从封版那刻起就开始过期。 判断 B1 B3">
+  <td data-label="编号" class="id-cell">INT-04-04</td>
+  <td data-label="访谈对象" class="who">秦芮<small>数字化工程师</small></td>
+  <td data-label="主题 / 陈述" class="stmt"><b>数据时效</b>
+    <div>排班 T-1 封版后不再更新，现场变更不入系统，名单自封版起持续过期</div><details><summary>原话</summary><blockquote>排班赛前一夜封版。现场变更不进系统，只在群里。所以系统里的名单，从封版那刻起就开始过期。</blockquote></details></td>
+  <td data-label="性质"><span class="tag judge">判断</span></td>
+  <td data-label="断点"><span class="tag b">B1</span><span class="tag b">B3</span></td>
+  <td data-label="交叉核对"><span class="tag crossed">已交叉（INT-01-02 / INT-03-02）</span></td>
+</tr>
+<tr data-who="秦芮" data-type="事实陈述"
+    data-breaks="B4" data-search="INT-04-05 秦芮 数字化工程师 故障兜底 站点信号差时扫码失败，退回纸质，回来再录一遍 站点信号差，扫码失败就退回纸质。纸质回来再录一遍。 事实陈述 B4">
+  <td data-label="编号" class="id-cell">INT-04-05</td>
+  <td data-label="访谈对象" class="who">秦芮<small>数字化工程师</small></td>
+  <td data-label="主题 / 陈述" class="stmt"><b>故障兜底</b>
+    <div>站点信号差时扫码失败，退回纸质，回来再录一遍</div><details><summary>原话</summary><blockquote>站点信号差，扫码失败就退回纸质。纸质回来再录一遍。</blockquote></details></td>
+  <td data-label="性质"><span class="tag fact">事实陈述</span></td>
+  <td data-label="断点"><span class="tag b">B4</span></td>
+  <td data-label="交叉核对"><span class="tag crossed">已交叉（INT-02-05）</span></td>
+</tr>
+<tr data-who="秦芮" data-type="事实陈述"
+    data-breaks="B4" data-search="INT-04-06 秦芮 数字化工程师 可读数据面 当前可直接读取的只有三样：封版排班 Excel、签到导出 CSV、分站名单；其余字段需排期开发 能立刻给的就三样：封版排班 Excel、签到导出的 CSV、分站名单。别的要开发，开发就要排期。 事实陈述 B4">
+  <td data-label="编号" class="id-cell">INT-04-06</td>
+  <td data-label="访谈对象" class="who">秦芮<small>数字化工程师</small></td>
+  <td data-label="主题 / 陈述" class="stmt"><b>可读数据面</b>
+    <div>当前可直接读取的只有三样：封版排班 Excel、签到导出 CSV、分站名单；其余字段需排期开发</div><details><summary>原话</summary><blockquote>能立刻给的就三样：封版排班 Excel、签到导出的 CSV、分站名单。别的要开发，开发就要排期。</blockquote></details></td>
+  <td data-label="性质"><span class="tag fact">事实陈述</span></td>
+  <td data-label="断点"><span class="tag b">B4</span></td>
+  <td data-label="交叉核对"><span class="tag crossed">与 INT-04-01 / INT-04-03 一致（只有导出，无写回）</span></td>
+</tr>
+<tr data-who="傅景" data-type="事实陈述"
+    data-breaks="" data-search="INT-05-01 傅景 审核与质量负责人 合规红线 个人信息能不落就不落；人脸属生物识别，需单独评估，不得顺手引入 身份证、手机号这类个人信息，能不落就不落。人脸是生物识别，单独评估，别顺手加进来。 事实陈述 ">
+  <td data-label="编号" class="id-cell">INT-05-01</td>
+  <td data-label="访谈对象" class="who">傅景<small>审核与质量负责人</small></td>
+  <td data-label="主题 / 陈述" class="stmt"><b>合规红线</b>
+    <div>个人信息能不落就不落；人脸属生物识别，需单独评估，不得顺手引入</div><details><summary>原话</summary><blockquote>身份证、手机号这类个人信息，能不落就不落。人脸是生物识别，单独评估，别顺手加进来。</blockquote></details></td>
+  <td data-label="性质"><span class="tag fact">事实陈述</span></td>
+  <td data-label="断点">—</td>
+  <td data-label="交叉核对"><span class="tag crossed">单源（红线声明）</span></td>
+</tr>
+<tr data-who="傅景" data-type="事实陈述"
+    data-breaks="B2" data-search="INT-05-02 傅景 审核与质量负责人 人工审批 名单变更与异常结案必须人工签字确认，不得自动放行 名单变更、异常结案，必须有人签字确认，不能自动过。 事实陈述 B2">
+  <td data-label="编号" class="id-cell">INT-05-02</td>
+  <td data-label="访谈对象" class="who">傅景<small>审核与质量负责人</small></td>
+  <td data-label="主题 / 陈述" class="stmt"><b>人工审批</b>
+    <div>名单变更与异常结案必须人工签字确认，不得自动放行</div><details><summary>原话</summary><blockquote>名单变更、异常结案，必须有人签字确认，不能自动过。</blockquote></details></td>
+  <td data-label="性质"><span class="tag fact">事实陈述</span></td>
+  <td data-label="断点"><span class="tag b">B2</span></td>
+  <td data-label="交叉核对"><span class="tag crossed">与 INT-03-03 责任转移点一致</span></td>
+</tr>
+<tr data-who="傅景" data-type="判断"
+    data-breaks="B2" data-search="INT-05-03 傅景 审核与质量负责人 验收口径 抽查十次交接，看有多少次能给出“谁、何时、确认了哪个岗位” 我只看一件事：抽查十次交接，能拿出几次'谁、什么时候、确认了哪个岗位'。 判断 B2">
+  <td data-label="编号" class="id-cell">INT-05-03</td>
+  <td data-label="访谈对象" class="who">傅景<small>审核与质量负责人</small></td>
+  <td data-label="主题 / 陈述" class="stmt"><b>验收口径</b>
+    <div>抽查十次交接，看有多少次能给出“谁、何时、确认了哪个岗位”</div><details><summary>原话</summary><blockquote>我只看一件事：抽查十次交接，能拿出几次'谁、什么时候、确认了哪个岗位'。</blockquote></details></td>
+  <td data-label="性质"><span class="tag judge">判断</span></td>
+  <td data-label="断点"><span class="tag b">B2</span></td>
+  <td data-label="交叉核对"><span class="tag crossed">与 INT-01-03 口径一致</span></td>
+</tr>
+<tr data-who="傅景" data-type="事实陈述"
+    data-breaks="B2" data-search="INT-05-04 傅景 审核与质量负责人 留存与凭证 交接记录至少保留一个赛季；截图不作为有效凭证（无法保证完整性） 至少一个赛季。截图不算凭证，截不了完整性。 事实陈述 B2">
+  <td data-label="编号" class="id-cell">INT-05-04</td>
+  <td data-label="访谈对象" class="who">傅景<small>审核与质量负责人</small></td>
+  <td data-label="主题 / 陈述" class="stmt"><b>留存与凭证</b>
+    <div>交接记录至少保留一个赛季；截图不作为有效凭证（无法保证完整性）</div><details><summary>原话</summary><blockquote>至少一个赛季。截图不算凭证，截不了完整性。</blockquote></details></td>
+  <td data-label="性质"><span class="tag fact">事实陈述</span></td>
+  <td data-label="断点"><span class="tag b">B2</span></td>
+  <td data-label="交叉核对"><span class="tag single">单源</span></td>
+</tr>
+<tr data-who="傅景" data-type="判断"
+    data-breaks="B3" data-search="INT-05-05 傅景 审核与质量负责人 兜底与升级 不一致必须转人工确认，并设升级时限，不得长期挂起 对不上就走人工确认，并且要有升级时限，不能一直挂着。 判断 B3">
+  <td data-label="编号" class="id-cell">INT-05-05</td>
+  <td data-label="访谈对象" class="who">傅景<small>审核与质量负责人</small></td>
+  <td data-label="主题 / 陈述" class="stmt"><b>兜底与升级</b>
+    <div>不一致必须转人工确认，并设升级时限，不得长期挂起</div><details><summary>原话</summary><blockquote>对不上就走人工确认，并且要有升级时限，不能一直挂着。</blockquote></details></td>
+  <td data-label="性质"><span class="tag judge">判断</span></td>
+  <td data-label="断点"><span class="tag b">B3</span></td>
+  <td data-label="交叉核对"><span class="tag crossed">与 INT-03-05（现状无时限）冲突</span></td>
+</tr>
+<tr data-who="傅景" data-type="事实陈述"
+    data-breaks="B2" data-search="INT-05-06 傅景 审核与质量负责人 抽查频次与举证责任 每赛季抽查 2 次、每次 10 份交接；抽到拿不出凭证按「未执行」计，举证责任在业务方 一个赛季抽两次，一次抽十份。抽到拿不出来的，我们就按「没做」算。举证的责任在业务方，不在我们。 事实陈述 B2">
+  <td data-label="编号" class="id-cell">INT-05-06</td>
+  <td data-label="访谈对象" class="who">傅景<small>审核与质量负责人</small></td>
+  <td data-label="主题 / 陈述" class="stmt"><b>抽查频次与举证责任</b>
+    <div>每赛季抽查 2 次、每次 10 份交接；抽到拿不出凭证按「未执行」计，举证责任在业务方</div><details><summary>原话</summary><blockquote>一个赛季抽两次，一次抽十份。抽到拿不出来的，我们就按「没做」算。举证的责任在业务方，不在我们。</blockquote></details></td>
+  <td data-label="性质"><span class="tag fact">事实陈述</span></td>
+  <td data-label="断点"><span class="tag b">B2</span></td>
+  <td data-label="交叉核对"><span class="tag crossed">与 INT-05-03 / INT-05-04 一致（同一口径的频次细化）</span></td>
+</tr>
+<tr data-who="叶书" data-type="判断"
+    data-breaks="B6" data-search="INT-06-01 叶书 客户协同代表 跨部门口径冲突 现场以“人在”为准，客户以“名单是否一致”为准 现场觉得'人在就行'，客户看'名单对不对'。同一件事，两个口径。 判断 B6">
+  <td data-label="编号" class="id-cell">INT-06-01</td>
+  <td data-label="访谈对象" class="who">叶书<small>客户协同代表</small></td>
+  <td data-label="主题 / 陈述" class="stmt"><b>跨部门口径冲突</b>
+    <div>现场以“人在”为准，客户以“名单是否一致”为准</div><details><summary>原话</summary><blockquote>现场觉得'人在就行'，客户看'名单对不对'。同一件事，两个口径。</blockquote></details></td>
+  <td data-label="性质"><span class="tag judge">判断</span></td>
+  <td data-label="断点"><span class="tag b">B6</span></td>
+  <td data-label="交叉核对"><span class="tag single">单源</span></td>
+</tr>
+<tr data-who="叶书" data-type="事实陈述"
+    data-breaks="B6" data-search="INT-06-02 叶书 客户协同代表 报数口径 按实际在岗人次报数；迟到与换人是否计入每次现问，约半小时/次，每场 2 次 我们按实际在岗人次报数。客户问：迟到算不算？换人算不算？我每次都要回去问，一次半小时。 事实陈述 B6">
+  <td data-label="编号" class="id-cell">INT-06-02</td>
+  <td data-label="访谈对象" class="who">叶书<small>客户协同代表</small></td>
+  <td data-label="主题 / 陈述" class="stmt"><b>报数口径</b>
+    <div>按实际在岗人次报数；迟到与换人是否计入每次现问，约半小时/次，每场 2 次</div><details><summary>原话</summary><blockquote>我们按实际在岗人次报数。客户问：迟到算不算？换人算不算？我每次都要回去问，一次半小时。</blockquote></details></td>
+  <td data-label="性质"><span class="tag fact">事实陈述</span></td>
+  <td data-label="断点"><span class="tag b">B6</span></td>
+  <td data-label="交叉核对"><span class="tag single">单源</span></td>
+</tr>
+<tr data-who="叶书" data-type="事实陈述"
+    data-breaks="B3 B6" data-search="INT-06-03 叶书 客户协同代表 客户侧事件 客户曾因某站点约 10 分钟无人值守直接来电 有一次是站点十分钟没人，客户直接打过来。我只能说'我在核实'，然后等现场回我。 事实陈述 B3 B6">
+  <td data-label="编号" class="id-cell">INT-06-03</td>
+  <td data-label="访谈对象" class="who">叶书<small>客户协同代表</small></td>
+  <td data-label="主题 / 陈述" class="stmt"><b>客户侧事件</b>
+    <div>客户曾因某站点约 10 分钟无人值守直接来电</div><details><summary>原话</summary><blockquote>有一次是站点十分钟没人，客户直接打过来。我只能说'我在核实'，然后等现场回我。</blockquote></details></td>
+  <td data-label="性质"><span class="tag fact">事实陈述</span></td>
+  <td data-label="断点"><span class="tag b">B3</span><span class="tag b">B6</span></td>
+  <td data-label="交叉核对"><span class="tag crossed">已交叉（INT-02-03 岗位空窗 40 分钟）</span></td>
+</tr>
+<tr data-who="叶书" data-type="判断"
+    data-breaks="" data-search="INT-06-04 叶书 客户协同代表 不可自动化范围 对外报数与对外承诺不可自动，须人工复核 对外报数、对外承诺，不能自动。得有人看一遍。 判断 ">
+  <td data-label="编号" class="id-cell">INT-06-04</td>
+  <td data-label="访谈对象" class="who">叶书<small>客户协同代表</small></td>
+  <td data-label="主题 / 陈述" class="stmt"><b>不可自动化范围</b>
+    <div>对外报数与对外承诺不可自动，须人工复核</div><details><summary>原话</summary><blockquote>对外报数、对外承诺，不能自动。得有人看一遍。</blockquote></details></td>
+  <td data-label="性质"><span class="tag judge">判断</span></td>
+  <td data-label="断点">—</td>
+  <td data-label="交叉核对"><span class="tag crossed">支撑 case-SCOPE 边界</span></td>
+</tr>
+<tr data-who="叶书" data-type="事实陈述"
+    data-breaks="B6" data-search="INT-06-05 叶书 客户协同代表 反馈闭环 试点与赛后反馈只在复盘会上口头收集，无固定表单 赛后复盘会上问一句。没有固定表。 事实陈述 B6">
+  <td data-label="编号" class="id-cell">INT-06-05</td>
+  <td data-label="访谈对象" class="who">叶书<small>客户协同代表</small></td>
+  <td data-label="主题 / 陈述" class="stmt"><b>反馈闭环</b>
+    <div>试点与赛后反馈只在复盘会上口头收集，无固定表单</div><details><summary>原话</summary><blockquote>赛后复盘会上问一句。没有固定表。</blockquote></details></td>
+  <td data-label="性质"><span class="tag fact">事实陈述</span></td>
+  <td data-label="断点"><span class="tag b">B6</span></td>
+  <td data-label="交叉核对"><span class="tag single">单源</span></td>
+</tr>
+<tr data-who="叶书" data-type="判断"
+    data-breaks="B6" data-search="INT-06-06 叶书 客户协同代表 对外报数的最小字段 对外报数只需三样：岗位有人的时段、在岗人、空窗时长；其余细节客户不问 我只要能说清三件事：这个岗位什么时候有人、是谁、中间空了多久。别的细节客户不问。 判断 B6">
+  <td data-label="编号" class="id-cell">INT-06-06</td>
+  <td data-label="访谈对象" class="who">叶书<small>客户协同代表</small></td>
+  <td data-label="主题 / 陈述" class="stmt"><b>对外报数的最小字段</b>
+    <div>对外报数只需三样：岗位有人的时段、在岗人、空窗时长；其余细节客户不问</div><details><summary>原话</summary><blockquote>我只要能说清三件事：这个岗位什么时候有人、是谁、中间空了多久。别的细节客户不问。</blockquote></details></td>
+  <td data-label="性质"><span class="tag judge">判断</span></td>
+  <td data-label="断点"><span class="tag b">B6</span></td>
+  <td data-label="交叉核对"><span class="tag crossed">与 INT-06-02 一致（口径现问的落点）</span></td>
+</tr></tbody>
+    </table>
+    <div class="empty" id="emptyMsg" hidden>没有匹配的记录。清空筛选条件再试。</div>
+  </div>
+</div></section>
+
+
+<section id="limits"><div class="wrap">
+  <h2><em>05</em>这些结论能信到什么程度</h2>
+  <p class="lede">本案最好的证据是 L2。四份原始凭证都还没拿到，所以基线只够判断
+  "值不值得动"，不够当验收基线。</p>
+  <div class="levels"><div class="level"><div class="lv">L0</div><div class="nm">听说</div><div class="ds">转述、推测、没有具体时间地点。不进结论。</div></div><div class="level"><div class="lv">L1</div><div class="nm">单人口述</div><div class="ds">一个角色说清了一次具体事件，但没有第二个人确认。</div></div><div class="level ceiling"><div class="lv">L2</div><div class="nm">多人交叉</div><div class="ds">两个以上角色独立说同一件事，口径一致。本案结论的天花板。</div></div><div class="level"><div class="lv">L3</div><div class="nm">原始凭证</div><div class="ds">排班表、交接单、签到导出等原件。本案 0 份。</div></div><div class="level"><div class="lv">L4</div><div class="nm">系统导出</div><div class="ds">系统侧可复算的数据。本案 0 项。</div></div></div>
+  <p style="font-size:13.5px;color:var(--ink2);margin-top:18px">
+    当前台账：25 条达到 L2（多角色交叉），11 条仍是单源，
+  L3 原始凭证 0 份、L4 系统导出 0 项。任何"返工人时下降 X%"的说法在补齐凭证前都是估计。
+  </p>
+  <h2 style="margin-top:40px"><em>06</em>明确不做的三件事</h2>
+  <div class="donts"><div class="dont"><b>不做派班算法</b><span>排班本身不是痛点。优化算法会让「改了版没人知道」更严重。</span></div><div class="dont"><b>不做对外验收口径的终裁</b><span>谁对客户报数由业务负责人定，工具只负责让口径可查。</span></div><div class="dont"><b>不承诺返工人时降多少</b><span>凭证未取得前基线只到 L2，任何百分比都是编的。</span></div></div>
+</div></section>
+
+
+<footer><div class="wrap">
+  <p><b>资料性质</b>：合成训练资料（dlg-sports-volunteers）。
+  合成训练不代表真实授权、业务执行或客户验收；全部引语为演练访谈整理，原始凭证均待补。</p>
+  <p><b>数据来源</b>：<code>docs/调研记录.json</code>（唯一真源）。
+  本页由 <code>python src/build_site.py</code> 生成，请勿手改；改数据后重跑即可。
+  数据指纹 <code>031c1b7f1939</code>，与台账不一致说明页面过期。</p>
+  <p>样本：2026-10-18「东岸半程马拉松」志愿服务（合成演练设定）　
+  站点 6 个 ·
+  每站 4 个岗位 ·
+  3 个班次 ·
+  每场 12 次交接</p>
+</div></footer>
+
+</main>
+<script>
+(function(){
+  var rows = Array.prototype.slice.call(document.querySelectorAll('#ledgerBody tr'));
+  var countEl = document.getElementById('shownCount');
+  var searchEl = document.getElementById('q');
+  var typeEl = document.getElementById('typeFilter');
+  var brkEl = document.getElementById('breakFilter');
+  var chips = Array.prototype.slice.call(document.querySelectorAll('.chip[data-who]'));
+  var activeWho = '';
+
+  function apply(){
+    var q = (searchEl && searchEl.value || '').trim().toLowerCase();
+    var t = typeEl && typeEl.value || '';
+    var b = brkEl && brkEl.value || '';
+    var shown = 0;
+    rows.forEach(function(tr){
+      var ok = true;
+      if (activeWho && tr.dataset.who !== activeWho) ok = false;
+      if (ok && t && tr.dataset.type !== t) ok = false;
+      if (ok && b && (tr.dataset.breaks || '').indexOf(b) === -1) ok = false;
+      if (ok && q && (tr.dataset.search || '').toLowerCase().indexOf(q) === -1) ok = false;
+      tr.hidden = !ok;
+      if (ok) shown++;
+    });
+    if (countEl) countEl.textContent = '显示 ' + shown + ' / ' + rows.length + ' 条';
+    if (!shown){
+      var e = document.getElementById('emptyMsg');
+      if (e) e.hidden = false;
+    } else {
+      var e2 = document.getElementById('emptyMsg');
+      if (e2) e2.hidden = true;
+    }
+  }
+
+  chips.forEach(function(c){
+    c.addEventListener('click', function(){
+      activeWho = (activeWho === c.dataset.who) ? '' : c.dataset.who;
+      chips.forEach(function(x){
+        x.setAttribute('aria-pressed', x.dataset.who === activeWho ? 'true' : 'false');
+      });
+      apply();
+    });
+  });
+
+  // 断点卡片：点一下就把台账筛到该断点。评审从"哪里坏"走到"凭什么这么说"
+  // 应该是零摩擦的，否则没人会真的去核对。
+  Array.prototype.slice.call(document.querySelectorAll('.break')).forEach(function(card){
+    card.addEventListener('click', function(){
+      var bid = card.dataset.bid;
+      if (brkEl) brkEl.value = bid;
+      activeWho = '';
+      chips.forEach(function(x){ x.setAttribute('aria-pressed', 'false'); });
+      apply();
+      var sec = document.getElementById('ledger');
+      if (sec) sec.scrollIntoView({behavior:'smooth', block:'start'});
+    });
+  });
+
+  [searchEl, typeEl, brkEl].forEach(function(el){
+    if (el) el.addEventListener('input', apply);
+    if (el) el.addEventListener('change', apply);
+  });
+
+  apply();
+})();
+</script>
+</body>
+</html>

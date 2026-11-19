@@ -1,6 +1,6 @@
 """对外接口的统一返回结构。
 
-约定（全仓库一致，四个 CLI 与 `--json` 输出都走这里）：
+约定（全仓库一致，五个 CLI 与 `--json` 输出都走这里）：
 
     {"ok": bool, "data": any, "error": {"code": str, "msg": str} | None}
 

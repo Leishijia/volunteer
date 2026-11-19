@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="972" viewBox="0 0 1240 972" font-family="Microsoft YaHei, PingFang SC, sans-serif">
+<rect width="1240" height="972" fill="#FFFDF5"/>
+<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#5C7A5C"/></marker></defs>
+<text x="60" y="52" font-size="23" font-weight="700" fill="#29443B">利益相关者地图 · 赛事志愿者排班与交接</text>
+<text x="60" y="80" font-size="13" fill="#5C7A5C">案例 dlg-sports-volunteers ｜ 阶段 1/9 ｜ 上图＝决策链，下图＝决定权 × 受影响程度 ｜ 每个角色的证据编号可在 调研记录.json 中逐条核对</text>
+<rect x="60" y="112" width="158" height="78" rx="8" fill="#F7F9F3" stroke="#7A9474" stroke-width="1.3"/>
+<text x="72" y="132" font-size="11.5" fill="#7A9474">① 发起</text>
+<text x="72" y="154" font-size="15" font-weight="600" fill="#2D654F">顾明岚</text>
+<text x="72" y="174" font-size="10.5" fill="#29443B">定范围与试点</text>
+<line x1="222" y1="151.0" x2="240" y2="151.0" stroke="#5C7A5C" stroke-width="1.6" marker-end="url(#ar)"/>
+<rect x="244" y="112" width="158" height="78" rx="8" fill="#F7F9F3" stroke="#7A9474" stroke-width="1.3"/>
+<text x="256" y="132" font-size="11.5" fill="#7A9474">② 出资</text>
+<text x="256" y="154" font-size="15" font-weight="600" fill="#2D654F">顾明岚</text>
+<text x="256" y="174" font-size="10.5" fill="#29443B">改善预算内列支</text>
+<line x1="406" y1="151.0" x2="424" y2="151.0" stroke="#5C7A5C" stroke-width="1.6" marker-end="url(#ar)"/>
+<rect x="428" y="112" width="158" height="78" rx="8" fill="#F7F9F3" stroke="#7A9474" stroke-width="1.3"/>
+<text x="440" y="132" font-size="11.5" fill="#7A9474">③ 设计</text>
+<text x="440" y="154" font-size="15" font-weight="600" fill="#2D654F">秦芮 + 唐映秋</text>
+<text x="440" y="174" font-size="10.5" fill="#29443B">数据可读·流程可走</text>
+<line x1="590" y1="151.0" x2="608" y2="151.0" stroke="#5C7A5C" stroke-width="1.6" marker-end="url(#ar)"/>
+<rect x="612" y="112" width="158" height="78" rx="8" fill="#F7F9F3" stroke="#7A9474" stroke-width="1.3"/>
+<text x="624" y="132" font-size="11.5" fill="#7A9474">④ 审批</text>
+<text x="624" y="154" font-size="15" font-weight="600" fill="#2D654F">傅景</text>
+<text x="624" y="174" font-size="10.5" fill="#29443B">红线与留存</text>
+<line x1="774" y1="151.0" x2="792" y2="151.0" stroke="#5C7A5C" stroke-width="1.6" marker-end="url(#ar)"/>
+<rect x="796" y="112" width="158" height="78" rx="8" fill="#F7F9F3" stroke="#7A9474" stroke-width="1.3"/>
+<text x="808" y="132" font-size="11.5" fill="#7A9474">⑤ 使用</text>
+<text x="808" y="154" font-size="15" font-weight="600" fill="#2D654F">林亦舟 + 唐映秋</text>
+<text x="808" y="174" font-size="10.5" fill="#29443B">现场用不用</text>
+<line x1="958" y1="151.0" x2="976" y2="151.0" stroke="#5C7A5C" stroke-width="1.6" marker-end="url(#ar)"/>
+<rect x="980" y="112" width="158" height="78" rx="8" fill="#F7F9F3" stroke="#7A9474" stroke-width="1.3"/>
+<text x="992" y="132" font-size="11.5" fill="#7A9474">⑥ 对外</text>
+<text x="992" y="154" font-size="15" font-weight="600" fill="#2D654F">叶书</text>
+<text x="992" y="174" font-size="10.5" fill="#29443B">报数口径</text>
+<rect x="400.0" y="236" width="320.0" height="320.0" fill="#EEF3E8" stroke="#DCE3D4"/>
+<text x="706.0" y="260" text-anchor="end" font-size="13" font-weight="600" fill="#7A9474">重点管理</text>
+<text x="706.0" y="277" text-anchor="end" font-size="10" fill="#8FA089">高决定权 · 高受影响</text>
+<rect x="80" y="236" width="320.0" height="320.0" fill="#F7F4E8" stroke="#DCE3D4"/>
+<text x="94" y="260" text-anchor="start" font-size="13" font-weight="600" fill="#7A9474">保持知情</text>
+<text x="94" y="277" text-anchor="start" font-size="10" fill="#8FA089">低决定权 · 高受影响</text>
+<rect x="400.0" y="556.0" width="320.0" height="320.0" fill="#F3F6F8" stroke="#DCE3D4"/>
+<text x="706.0" y="580.0" text-anchor="end" font-size="13" font-weight="600" fill="#7A9474">保持满意</text>
+<text x="706.0" y="597.0" text-anchor="end" font-size="10" fill="#8FA089">高决定权 · 低受影响</text>
+<rect x="80" y="556.0" width="320.0" height="320.0" fill="#F7F7F2" stroke="#DCE3D4"/>
+<text x="94" y="580.0" text-anchor="start" font-size="13" font-weight="600" fill="#7A9474">观察</text>
+<text x="94" y="597.0" text-anchor="start" font-size="10" fill="#8FA089">低决定权 · 低受影响</text>
+<line x1="80" y1="556.0" x2="720" y2="556.0" stroke="#B9C4AE" stroke-width="1.2" stroke-dasharray="5 4"/>
+<line x1="400.0" y1="236" x2="400.0" y2="876" stroke="#B9C4AE" stroke-width="1.2" stroke-dasharray="5 4"/>
+<text x="400.0" y="898" text-anchor="middle" font-size="12" fill="#7A9474">决定权（能不能定 / 能不能拒） →</text>
+<text x="66" y="556.0" text-anchor="middle" font-size="12" fill="#7A9474" transform="rotate(-90 66 556.0)">受影响程度（交接丢了，谁最疼） →</text>
+<circle cx="571.6" cy="384.4" r="36" fill="#FFFFFF" stroke="#5C7A5C" stroke-width="1.8"/>
+<text x="571.6" y="380.4" text-anchor="middle" font-size="14" font-weight="600" fill="#29443B">顾明岚</text>
+<text x="571.6" y="398.4" text-anchor="middle" font-size="9" fill="#5C7A5C">业务负责人</text>
+<circle cx="560.2" cy="487.4" r="36" fill="#FFFFFF" stroke="#5C7A5C" stroke-width="1.8"/>
+<text x="560.2" y="483.4" text-anchor="middle" font-size="14" font-weight="600" fill="#29443B">傅景</text>
+<text x="560.2" y="501.4" text-anchor="middle" font-size="9" fill="#5C7A5C">审核质量</text>
+<circle cx="468.6" cy="430.2" r="36" fill="#FFFFFF" stroke="#5C7A5C" stroke-width="1.8"/>
+<text x="468.6" y="426.2" text-anchor="middle" font-size="14" font-weight="600" fill="#29443B">叶书</text>
+<text x="468.6" y="444.2" text-anchor="middle" font-size="9" fill="#5C7A5C">客户协同</text>
+<circle cx="457.2" cy="727.6" r="36" fill="#FFFFFF" stroke="#5C7A5C" stroke-width="1.8"/>
+<text x="457.2" y="723.6" text-anchor="middle" font-size="14" font-weight="600" fill="#29443B">秦芮</text>
+<text x="457.2" y="741.6" text-anchor="middle" font-size="9" fill="#5C7A5C">数字化</text>
+<circle cx="308.5" cy="430.2" r="36" fill="#FFFFFF" stroke="#5C7A5C" stroke-width="1.8" stroke-dasharray="7 5"/>
+<text x="308.5" y="426.2" text-anchor="middle" font-size="14" font-weight="600" fill="#29443B">唐映秋</text>
+<text x="308.5" y="444.2" text-anchor="middle" font-size="9" fill="#5C7A5C">流程协调</text>
+<circle cx="228.4" cy="327.2" r="36" fill="#FFFFFF" stroke="#5C7A5C" stroke-width="1.8" stroke-dasharray="7 5"/>
+<text x="228.4" y="323.2" text-anchor="middle" font-size="14" font-weight="600" fill="#29443B">林亦舟</text>
+<text x="228.4" y="341.2" text-anchor="middle" font-size="9" fill="#5C7A5C">现场协调</text>
+<text x="760" y="242" font-size="14" font-weight="600" fill="#2D654F">谁能定什么，能否决什么</text>
+<text x="760" y="270" font-size="12.5" font-weight="600" fill="#29443B">顾明岚 · 业务负责人　<tspan font-size="10" fill="#7A9474">[重点管理]</tspan></text>
+<text x="770" y="287" font-size="10.5" fill="#29443B">能定：立不立项、试点范围、投入口径</text>
+<text x="770" y="303" font-size="10.5" fill="#A6553A">否决：可以一句话叫停（发起人）</text>
+<text x="770" y="319" font-size="9.5" fill="#7C8FA0">证据：INT-01-05 / INT-01-06</text>
+<line x1="760" y1="332" x2="1180" y2="332" stroke="#E6EBDF"/>
+<text x="760" y="344" font-size="12.5" font-weight="600" fill="#29443B">傅景 · 审核与质量负责人　<tspan font-size="10" fill="#7A9474">[重点管理]</tspan></text>
+<text x="770" y="361" font-size="10.5" fill="#29443B">能定：红线、留存期限、抽什么</text>
+<text x="770" y="377" font-size="10.5" fill="#A6553A">否决：审批不过即不启动（正式否决）</text>
+<text x="770" y="393" font-size="9.5" fill="#7C8FA0">证据：INT-05-02 / INT-05-04 / INT-05-06</text>
+<line x1="760" y1="406" x2="1180" y2="406" stroke="#E6EBDF"/>
+<text x="760" y="418" font-size="12.5" font-weight="600" fill="#29443B">叶书 · 客户协同代表　<tspan font-size="10" fill="#7A9474">[重点管理]</tspan></text>
+<text x="770" y="435" font-size="10.5" fill="#29443B">能定：对外怎么表述成果、怎么算数</text>
+<text x="770" y="451" font-size="10.5" fill="#A6553A">否决：对外口径不点头就不能出数（正式否决）</text>
+<text x="770" y="467" font-size="9.5" fill="#7C8FA0">证据：INT-06-02 / INT-06-04 / INT-06-06</text>
+<line x1="760" y1="480" x2="1180" y2="480" stroke="#E6EBDF"/>
+<text x="760" y="492" font-size="12.5" font-weight="600" fill="#29443B">秦芮 · 数字化工程师　<tspan font-size="10" fill="#7A9474">[保持满意]</tspan></text>
+<text x="770" y="509" font-size="10.5" fill="#29443B">能定：读写什么数据、字段口径</text>
+<text x="770" y="525" font-size="10.5" fill="#A6553A">否决：没有可读接口就做不成（正式否决）</text>
+<text x="770" y="541" font-size="9.5" fill="#7C8FA0">证据：INT-04-03 / INT-04-06</text>
+<line x1="760" y1="554" x2="1180" y2="554" stroke="#E6EBDF"/>
+<text x="760" y="566" font-size="12.5" font-weight="600" fill="#29443B">唐映秋 · 项目流程协调员　<tspan font-size="10" fill="#7A9474">[保持知情]</tspan></text>
+<text x="770" y="583" font-size="10.5" fill="#29443B">能定：台账口径、责任转移点</text>
+<text x="770" y="599" font-size="10.5" fill="#A6553A">软否决：不接手台账就等于不接责（软否决）</text>
+<text x="770" y="615" font-size="9.5" fill="#7C8FA0">证据：INT-03-02 / INT-03-03 / INT-03-06</text>
+<line x1="760" y1="628" x2="1180" y2="628" stroke="#E6EBDF"/>
+<text x="760" y="640" font-size="12.5" font-weight="600" fill="#29443B">林亦舟 · 赛事现场协调员　<tspan font-size="10" fill="#7A9474">[保持知情]</tspan></text>
+<text x="770" y="657" font-size="10.5" fill="#29443B">能定：现场怎么用、用不用</text>
+<text x="770" y="673" font-size="10.5" fill="#A6553A">软否决：绕开即失败，技术再好也没用（用脚投票）</text>
+<text x="770" y="689" font-size="9.5" fill="#7C8FA0">证据：INT-02-02 / INT-02-05 / INT-02-06</text>
+<text x="60" y="932" font-size="11" fill="#8FA089">四象限：重点管理＝既要他们的判断也要他们的时间　保持满意＝平时不关心、卡住就动不了　保持知情＝左右不了决定但会被改变工作方式　观察＝本阶段不投入沟通成本</text>
+<text x="60" y="954" font-size="11.5" fill="#5C7A5C">实线气泡＝章程写明的否决点　虚线气泡＝无正式否决权但绕开即失败（用脚投票）　位置依据见 项目章程与利益相关者地图 §4；部门头衔不作为坐标依据</text>
+</svg>

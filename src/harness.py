@@ -59,6 +59,7 @@ ROOT = settings.ROOT
 
 sys.path.insert(0, str(ROOT / "src"))
 import build_ledger as ledger          # noqa: E402
+import build_site as site              # noqa: E402
 import render_flow as flow             # noqa: E402
 import render_stakeholders as stake    # noqa: E402
 
@@ -657,7 +658,8 @@ def l4_expected_sync() -> list[str]:
 # 所以在报告的分层说明里如实标成"部分可验"。
 
 ENVELOPE_KEYS = {"ok", "data", "error"}
-CLI_ENTRIES = ["build_ledger.py", "render_flow.py", "render_stakeholders.py"]
+CLI_ENTRIES = ["build_ledger.py", "render_flow.py", "render_stakeholders.py",
+               "build_site.py", "publish.py"]
 CJK_RE = re.compile(r"[\u4e00-\u9fff]")
 # 只认"真的会被当成路径/地址"的形态：盘符开头、常见系统目录、带主机的 http(s)。
 # 放宽到"字符串里带斜杠"会把 "1/9"、正则、Mermaid 语法全判成问题；
@@ -725,11 +727,11 @@ def l5_hardcoded() -> list[str]:
     return issues
 
 
-@register("L5-3", "L5", "三个 CLI 的 --json 输出符合统一结构",
+@register("L5-3", "L5", "五个 CLI 的 --json 输出符合统一结构",
           "接口形状一散，CI 与 hook 就要为每个脚本写一套解析；"
           "ok 与退出码不一致还会让 CI 误判通过", "blocker")
 def l5_envelope() -> list[str]:
-    """逐个跑三个生成器的 `--check --json`，校验返回结构与退出码一致。
+    """逐个跑五个入口的 `--check --json`，校验返回结构与退出码一致。
 
     入参：无。
     出参：问题列表。
@@ -738,6 +740,9 @@ def l5_envelope() -> list[str]:
     为什么真的去跑而不是静态看代码 import 了 envelope：
     静态只能证明"引了包"，证明不了"输出真的是这个形状"。
     这一条守的正是"接口"本身，必须验行为。
+
+    新入口必须加进 CLI_ENTRIES，否则它逃过的是这一整条规则——
+    publish.py 就是这么被补进来的：接口只要存在，就该被同一把尺子量。
     """
     issues = []
     for name in CLI_ENTRIES:
@@ -765,6 +770,105 @@ def l5_envelope() -> list[str]:
             issues.append(f"{name} ok=True 但退出码是 {proc.returncode}")
         if not resp["ok"] and proc.returncode == 0:
             issues.append(f"{name} ok=False 但退出码是 0（CI 会误判为通过）")
+    return issues
+
+
+# ---------------------------------------------------------------- L6 上线物
+# 站点是唯一会被"外人"看到的东西：它一旦过期，问题不在仓库里，而在评审者
+# 打开的那个链接上——最坏的一种失败，因为本地任何检查都不会红。
+#
+# 这里的判据刻意只看两件事：内容是不是当前台账的产物、页面是不是自包含。
+# 不看"好不好看"，那是设计评审的事，机器判不了。
+
+EXTERNAL_REF_RE = re.compile(
+    r"""(?:src|href)\s*=\s*["'](?:https?:)?//|url\(\s*["']?(?:https?:)?//""",
+    re.IGNORECASE,
+)
+
+
+def diff_snippet(a: str, b: str, ctx: int = 16, width: int = 48) -> tuple[str, str]:
+    """从两行的第一个差异处截片段，供报错信息使用。
+
+    入参：a 文件里的行，b 应有的行；ctx 差异点前保留的字符数；width 往后截的长度。
+    出参：(a 的片段, b 的片段)。
+    失败：不抛异常；完全相同则返回两段空串（调用方本不该在这时调用）。
+
+    为什么不直接 `行[:60]`：本次就是被这个坑咬到——两行在前 60 个字符上完全
+    一样（都是同一条证据的 data-search 前缀），截断后报错变成"文件是 X，应为 X"，
+    读的人只能自己拿 diff 工具再查一遍，等于没报。
+    """
+    n = min(len(a), len(b))
+    i = 0
+    while i < n and a[i] == b[i]:
+        i += 1
+    start = max(0, i - ctx)
+    return a[start:i + width], b[start:i + width]
+
+
+@register("L6-1", "L6", "站点是当前台账的产物",
+          "线上那份如果停在旧数据，仓库里全绿也没用——评审看到的是另一个结论", "blocker")
+def l6_site_sync() -> list[str]:
+    """比对 site/index.html 与"现在重新生成应该得到的内容"。
+
+    入参：无。
+    出参：问题列表；不一致时定位到第一处差异的行号。
+    失败：台账或配置坏导致生成抛异常时，由 run_one 记 ERROR。
+
+    为什么逐字节比而不是只看指纹：指纹只能证明"数据变了"，证明不了
+    "页面跟着变了"——改模板忘了重跑，指纹是新的、页面是旧的。
+    """
+    index = settings.path("site") / "index.html"
+    if not index.exists():
+        return ["site/index.html 不存在，跑 python src/build_site.py 生成"]
+
+    expected = site.render_page(site.collect(site.load_ledger())).replace("\r\n", "\n")
+    actual = read_norm(index)
+    if actual == expected:
+        return []
+
+    a_lines, e_lines = actual.split("\n"), expected.split("\n")
+    for i, (x, y) in enumerate(zip(a_lines, e_lines), 1):
+        if x != y:
+            got, want = diff_snippet(x, y)
+            return [f"site/index.html 第 {i} 行与当前台账不一致"
+                    f"（文件是 …{got}…，应为 …{want}…）"
+                    f"——跑 python src/build_site.py 重新生成"]
+    return [f"site/index.html 行数与当前台账不一致"
+            f"（文件 {len(a_lines)} 行 / 应为 {len(e_lines)} 行）"
+            f"——跑 python src/build_site.py 重新生成"]
+
+
+@register("L6-2", "L6", "站点自包含且五个区块齐全",
+          "引了 CDN 字体或统计脚本，内网部署就白屏；缺锚点则导航点了没反应", "blocker")
+def l6_site_selfcontained() -> list[str]:
+    """检查页面没有外部资源依赖，且导航指向的区块都真的存在。
+
+    入参：无。
+    出参：问题列表。
+    失败：文件不存在时返回提示，不抛异常。
+
+    外部依赖为什么算失败而不算警告：这台机器和评审者的网络不一样。
+    本地能打开、内网打不开的页面，比打不开更难排查。
+    """
+    index = settings.path("site") / "index.html"
+    if not index.exists():
+        return ["site/index.html 不存在，跑 python src/build_site.py 生成"]
+    html = read_norm(index)
+    issues = []
+
+    for m in EXTERNAL_REF_RE.finditer(html):
+        line = html[:m.start()].count("\n") + 1
+        issues.append(f"site/index.html:{line} 引用了外部资源：{m.group(0)[:60]!r}"
+                      f"（站点必须能离线打开）")
+
+    for sid, name in site.SECTIONS:
+        if f'id="{sid}"' not in html:
+            issues.append(f"site/index.html 缺少区块锚点 id=\"{sid}\"（导航里的「{name}」会点不动）")
+
+    assets = settings.path("site") / "assets"
+    for target in ("flow.svg", "stakeholders.svg"):
+        if not (assets / target).exists():
+            issues.append(f"site/assets/{target} 不存在（图上会是一个破图标）")
     return issues
 
 
@@ -979,6 +1083,8 @@ def render_markdown(results: list[Result], total_ms: float) -> str:
              "失效链接和遗留的旧数字都不报错，只会静默误导读者 |")
     o.append("| L5 | 代码自己守住规范：docstring、无硬编码、接口形状 | "
              "这几条不会让当下的校验失败，只会在换机器、换人、接 CI 的时候集中爆 |")
+    o.append("| L6 | 站点是当前台账的产物，且不依赖任何外部资源 | "
+             "线上那份过期时，仓库全绿、评审看到的是旧结论，本地怎么查都查不出来 |")
     o.append("")
     o.append("## 全部检查项")
     o.append("")
