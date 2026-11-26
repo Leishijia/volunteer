@@ -1,0 +1,76 @@
+#!/bin/sh
+# post-commit：本地提交成功后，立刻把它推到远端。
+#
+# 为什么放在这里
+# -------------
+# 之前"上传"是一个要人记住的动作（python src/publish.py），忘了就会本地领先
+# 远端。这种状态在本地一切正常——只有接手的人拉到旧代码、或线上打开旧结论时
+# 才会发现，是最晚才暴露的一类失败。把推送挂到提交之后，就把"写完"和"同步完"
+# 变成同一件事。
+#
+# 为什么失败一律 exit 0
+# -------------------
+# 走到 post-commit 时提交已经写进本地历史了，钩子再返回非零也撤不回来，只会让
+# git 打一段吓人的错误、并且可能让上层脚本误判"提交失败"。所以这里只把原因
+# 说清楚，交给人处理，绝不假装成功。
+#
+# 为什么不用 publish.py
+# -------------------
+# 钩子只做"推"，不重建站点、不跑校验：那两件事要 Python 和 PyYAML，而钩子必须
+# 在任何机器上都只依赖 git 本身。站点是否过期由 publish.py 和 CI 的 L6 负责。
+
+set -u
+
+# 1) 显式跳过。批量改写历史（rebase / filter-branch）时逐个提交推送毫无意义，
+#    而且会把改写途中的中间态推上去。
+if [ "${SKIP_AUTOPUSH:-0}" = "1" ]; then
+    echo "[push] SKIP_AUTOPUSH=1，跳过自动推送"
+    exit 0
+fi
+
+git_dir=$(git rev-parse --git-dir 2>/dev/null) || exit 0
+cd "$(git rev-parse --show-toplevel 2>/dev/null)" 2>/dev/null || exit 0
+
+# 2) 历史改写或合并进行中：等这轮结束再推，否则推的是中间态。
+for marker in rebase-merge rebase-apply MERGE_HEAD CHERRY_PICK_HEAD REVERT_HEAD; do
+    if [ -e "$git_dir/$marker" ]; then
+        echo "[push] 历史改写或合并进行中（$marker），跳过自动推送"
+        exit 0
+    fi
+done
+
+# 3) detached HEAD 不推：这时候没有"该推到哪个分支"的答案，猜错就是污染远端。
+branch=$(git symbolic-ref --quiet --short HEAD 2>/dev/null) || {
+    echo "[push] 当前不在分支上（detached HEAD），跳过自动推送"
+    exit 0
+}
+
+# 4) 没有上游就不推。首次推送要显式指定目标分支，那是个需要人决定的动作。
+upstream=$(git rev-parse --abbrev-ref --quiet --symbolic-full-name '@{u}' 2>/dev/null) || {
+    echo "[push] 分支 $branch 还没有上游：先 git push -u origin $branch 一次，之后就会自动推送"
+    exit 0
+}
+
+# 5) 真正推送。三件事是必须的：
+#    stdin 关掉——凭据管理器一旦要交互会无限等待，把整个提交进程一起挂住；
+#    GIT_HTTP_LOW_SPEED_*——网络卡死时让传输自己失败，而不是挂到天荒地老；
+#    输出收进变量再打印——管道里拿不到 git 的退出码（$? 会变成 sed 的）。
+out=$(GIT_TERMINAL_PROMPT=0 \
+      GIT_HTTP_LOW_SPEED_LIMIT=1000 \
+      GIT_HTTP_LOW_SPEED_TIME=30 \
+      git push --quiet </dev/null 2>&1)
+rc=$?
+
+if [ -n "$out" ]; then
+    printf '%s\n' "$out" | sed 's/^/[push] /'
+fi
+
+if [ $rc -eq 0 ]; then
+    echo "[push] 已推送到 $upstream（$(git rev-parse --short HEAD)）"
+else
+    echo "[push] 推送失败（退出码 $rc）。提交已保存在本地，恢复网络后执行 git push 即可。" >&2
+    echo "[push] 若报 TLS connect error，先试：git config --local http.sslBackend schannel" >&2
+fi
+
+# 无论如何都不阻断提交：见文件头"为什么失败一律 exit 0"。
+exit 0
