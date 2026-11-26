@@ -254,11 +254,29 @@ def commit_and_push(message: str) -> dict[str, Any]:
         ) from exc
     if push.returncode != 0:
         detail = (push.stderr or push.stdout).strip() or "未知原因"
-        raise PublishError(
-            "PUSH_FAILED",
-            f"已提交 {sha} 但推送失败：{detail}。本地提交保留，处理好远端后重跑一次即可。",
-        )
+        raise PublishError("PUSH_FAILED",
+                           f"已提交 {sha} 但推送失败：{detail}{tls_hint(detail)}"
+                           "本地提交保留，处理好远端后重跑一次即可。")
     return {"committed": True, "pushed": True, "commit": sha, "files": files}
+
+
+def tls_hint(detail: str) -> str:
+    """给 TLS 握手失败补一句可操作的排查方向，其他错误返回空串。
+
+    入参：git push 的 stderr/stdout。
+    出参：一句提示（以句号结尾），或空串。
+    失败：不抛异常。
+
+    为什么要专门识别这一句：GitHub 推送在本机失败过一次，报的是
+    "TLS connect error: unexpected eof while reading"——连接根本没建立，
+    和账号、权限、仓库状态都无关。这类错误读起来像"认证问题"，很容易
+    让人去改 token，方向完全错。实测把 TLS 后端换成 Windows 自带的
+    schannel 就能连上，所以直接把这条路写进提示。
+    """
+    if "TLS" not in detail and "SSL" not in detail:
+        return ""
+    return ("（这是本机到远端的 TLS 握手被切断，不是账号权限问题。可试 "
+            "git config --local http.sslBackend schannel 后重推。）")
 
 
 def publish(message: str, check_only: bool) -> dict[str, Any]:
